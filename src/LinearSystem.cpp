@@ -10,27 +10,27 @@ const double LinearSystem::DEFAULT_MAX_TIME_BETWEEN_UPDATES = 1;
 LinearSystem::LinearSystem(Eigen::VectorXd _tfNum, Eigen::VectorXd _tfDen, double _Ts, IntegrationMethod _integrationMethod, double _prewarpFrequency) :
     n_filters(1), time_current(0), time_init_set(false)
 {
-    this->SetFilter(_tfNum, _tfDen);
-    this->UseNFilters(1);
-    this->SetSampling(_Ts);
-    this->SetMaximumTimeBetweenUpdates(DEFAULT_MAX_TIME_BETWEEN_UPDATES);
+    this->setFilter(_tfNum, _tfDen);
+    this->useNFilters(1);
+    this->setSampling(_Ts);
+    this->setMaximumTimeBetweenUpdates(DEFAULT_MAX_TIME_BETWEEN_UPDATES);
 
     integration_method = _integrationMethod;
     prewarp_frequency = _prewarpFrequency;
 }
 
-void LinearSystem::UseNFilters(const unsigned int n_filters)
+void LinearSystem::useNFilters(const unsigned int n_filters)
 {
     if (n_filters == 0)
         throw std::logic_error("received n_filters = 0, but LinearSystem must implement at least one filter");
 
-    initialOutputDerivatives.setZero(n_filters, order);
+    initial_output_derivatives.setZero(n_filters, order);
     state.setZero(n_filters, order);
     this->n_filters = n_filters;
     last_output.setZero(n_filters);
 }
 
-void LinearSystem::SetFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den)
+void LinearSystem::setFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den)
 {
     if (coef_den.size() == 0)
         throw std::logic_error("invalid system order, since there are no denominator coefficients to set");
@@ -41,25 +41,25 @@ void LinearSystem::SetFilter(const Eigen::VectorXd & coef_num, const Eigen::Vect
     if (coef_den(0) == 0)
         throw std::logic_error("denominator's first term can't be zero");
 
-    tfDen = coef_den;
+    tf_den = coef_den;
 
     // Make sure the numerator has as many coefficients as the denominator, even
     // if some of the higher terms are zero
     if (coef_den.size() > coef_num.size())
     {
-        Eigen::VectorXd tmp_num(tfDen.size());
+        Eigen::VectorXd tmp_num(tf_den.size());
         tmp_num << Eigen::VectorXd::Zero(coef_den.size() - coef_num.size(), 1), coef_num;
-        tfNum = tmp_num;
+        tf_num = tmp_num;
     }
     else
-        tfNum = coef_num;
+        tf_num = coef_num;
 
     // Normalize vectors such that the denominator is monic
-    tfNum = tfNum / tfDen(0);
-    tfDen = tfDen / tfDen(0);
+    tf_num = tf_num / tf_den(0);
+    tf_den = tf_den / tf_den(0);
 
     // Set the filter order
-    order = tfDen.size() - 1;
+    order = tf_den.size() - 1;
 
     // Reset state matrices
     A.setZero(order,order);
@@ -70,24 +70,24 @@ void LinearSystem::SetFilter(const Eigen::VectorXd & coef_num, const Eigen::Vect
     state.setZero(n_filters, order);
 
     // Reset output derivatives matrix
-    initialOutputDerivatives.setZero(n_filters, order);
+    initial_output_derivatives.setZero(n_filters, order);
 
     // Reset last output
     last_output.setZero(n_filters);
 }
 
-void LinearSystem::SetSampling(const double sampling_period)
+void LinearSystem::setSampling(const double sampling_period)
 {
     if (sampling_period <= 0.0)
         throw std::logic_error("non positive sampling time given");
 
     Ts = sampling_period;
 
-    if (Ts >= GetMaximumTimeBetweenUpdates())
-        SetMaximumTimeBetweenUpdates(10 * Ts);
+    if (Ts >= getMaximumTimeBetweenUpdates())
+        setMaximumTimeBetweenUpdates(10 * Ts);
 }
 
-void LinearSystem::SetMaximumTimeBetweenUpdates(double delta_time)
+void LinearSystem::setMaximumTimeBetweenUpdates(double delta_time)
 {
     if (delta_time <= 0.0)
         throw std::logic_error("non positive time given");
@@ -95,7 +95,7 @@ void LinearSystem::SetMaximumTimeBetweenUpdates(double delta_time)
     max_delta = 1000000L * delta_time;
 }
 
-void LinearSystem::ConvertFwdEuler(Eigen::VectorXd & poly) const
+void LinearSystem::convertFwdEuler(Eigen::VectorXd & poly) const
 {
     Eigen::VectorXd poly_old = poly;
     poly.setZero();
@@ -107,7 +107,7 @@ void LinearSystem::ConvertFwdEuler(Eigen::VectorXd & poly) const
     }
 }
 
-void LinearSystem::ConvertBwdEuler(Eigen::VectorXd & poly) const
+void LinearSystem::convertBwdEuler(Eigen::VectorXd & poly) const
 {
     Eigen::VectorXd poly_old = poly;
     poly.setZero();
@@ -119,7 +119,7 @@ void LinearSystem::ConvertBwdEuler(Eigen::VectorXd & poly) const
     }
 }
 
-void LinearSystem::ConvertTustin(Eigen::VectorXd & poly) const
+void LinearSystem::convertTustin(Eigen::VectorXd & poly) const
 {
     Eigen::VectorXd poly_old = poly;
     poly.setZero();
@@ -143,49 +143,49 @@ void LinearSystem::ConvertTustin(Eigen::VectorXd & poly) const
     }
 }
 
-void LinearSystem::DiscretizeSystem()
+void LinearSystem::discretizeSystem()
 {
     switch(integration_method)
     {
     case FORWARD_EULER:
-        this->ConvertFwdEuler(tfNum);
-        this->ConvertFwdEuler(tfDen);
+        this->convertFwdEuler(tf_num);
+        this->convertFwdEuler(tf_den);
         break;
     case BACKWARD_EULER:
-        this->ConvertBwdEuler(tfNum);
-        this->ConvertBwdEuler(tfDen);
+        this->convertBwdEuler(tf_num);
+        this->convertBwdEuler(tf_den);
         break;
     case TUSTIN:
-        this->ConvertTustin(tfNum);
-        this->ConvertTustin(tfDen);
+        this->convertTustin(tf_num);
+        this->convertTustin(tf_den);
         break;
     default: throw std::logic_error("invalid integration method");
     }
-    tfNum /= tfDen(0);
-    tfDen /= tfDen(0);
-    TF2SS();
+    tf_num /= tf_den(0);
+    tf_den /= tf_den(0);
+    tf2ss();
 }
 
-void LinearSystem::TF2SS()
+void LinearSystem::tf2ss()
 {
     if (order <= 0)
         throw std::logic_error("invalid system order");
 
     Eigen::VectorXd num(order + 1);
 
-    if (PolynomialDegree(tfNum) == PolynomialDegree(tfDen))
+    if (PolynomialDegree(tf_num) == PolynomialDegree(tf_den))
     {
         Eigen::VectorXd quotient(order + 1);
-        PolynomialDivision(tfNum, tfDen, quotient, num);
+        PolynomialDivision(tf_num, tf_den, quotient, num);
         D = quotient(order);
     }
     else
-        num = tfNum;
+        num = tf_num;
 
     A.setZero();
     A.topRightCorner(order-1, order-1) = Eigen::MatrixXd::Identity(order-1, order-1);
     for (unsigned int i = 0; i < order; i++)
-        A(order-1,i) = -tfDen(order-i);
+        A(order-1,i) = -tf_den(order-i);
 
     B.setZero();
     B(order-1) = 1;
@@ -195,7 +195,7 @@ void LinearSystem::TF2SS()
         C(i) = num(order-i);
 }
 
-Eigen::VectorXd LinearSystem::Update(const Eigen::RowVectorXd &signalIn, Time time)
+Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time time)
 {
     Time delta = time - time_current;
     if (!time_init_set)
@@ -213,7 +213,7 @@ Eigen::VectorXd LinearSystem::Update(const Eigen::RowVectorXd &signalIn, Time ti
     }
     else if (delta > max_delta)
     {
-        std::fprintf(stderr, "[WARN] (LinearSystem) There has been a long time since the last update (%.3f seconds)", GetMaximumTimeBetweenUpdates());
+        std::fprintf(stderr, "[WARN] (LinearSystem) There has been a long time since the last update (%.3f seconds)", getMaximumTimeBetweenUpdates());
         std::cerr << ". The filter will reset its state (based on the current input) to match the last output. If this is not acceptable, "
                   << "adjust the maximum update time in setMaximumUpdateTime." << std::endl;
         Eigen::MatrixXd u_history(n_filters, order), ydy(n_filters, order);
@@ -224,15 +224,15 @@ Eigen::VectorXd LinearSystem::Update(const Eigen::RowVectorXd &signalIn, Time ti
         ydy.setZero();
         ydy.col(0) = last_output;
         //
-        SetInitialOutputDerivatives(ydy);
-        SetInitialState(u_history);
-        SetInitialTime(time);
+        setInitialOutputDerivatives(ydy);
+        setInitialState(u_history);
+        setInitialTime(time);
         time_current = time;
         return last_output;
     }
 
 
-    Time iterations = std::roundl( (delta / GetSampling()) / 1000000L );
+    Time iterations = std::roundl( (delta / getSampling()) / 1000000L );
 
     if (iterations == 0)
         return last_output;
@@ -241,13 +241,13 @@ Eigen::VectorXd LinearSystem::Update(const Eigen::RowVectorXd &signalIn, Time ti
 
     for (unsigned int k = 1; k < iterations; ++k)
     {
-        Update(signalIn);
+        update(signalIn);
     }
-    Update(signalIn);
+    update(signalIn);
     return last_output;
 }
 
-void LinearSystem::Update(const Eigen::RowVectorXd &signalIn)
+void LinearSystem::update(const Eigen::RowVectorXd &signalIn)
 {
     if (signalIn.size() != n_filters)
     {
@@ -263,7 +263,7 @@ void LinearSystem::Update(const Eigen::RowVectorXd &signalIn)
     state.transposeInPlace();
 }
 
-void LinearSystem::SetInitialState(const Eigen::MatrixXd & u_history)
+void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
 {
     if (u_history.cols() != order)
     {
@@ -293,7 +293,7 @@ void LinearSystem::SetInitialState(const Eigen::MatrixXd & u_history)
         Cbar.row(0) = C;
         Dbar.setZero();
         y.setZero();
-        y(0) = initialOutputDerivatives(i,0);
+        y(0) = initial_output_derivatives(i,0);
 
         for (unsigned int j = 1; j < order; j++)
         {
@@ -308,14 +308,14 @@ void LinearSystem::SetInitialState(const Eigen::MatrixXd & u_history)
             for (unsigned int k = 0; k <= j-1; k++)
                 acc += NchooseK(j,k) * std::pow(-1,k) * y(k);
 
-            y(j) = (std::pow(Ts,j) * initialOutputDerivatives(i,j) - acc) * std::pow(-1,j);
+            y(j) = (std::pow(Ts,j) * initial_output_derivatives(i,j) - acc) * std::pow(-1,j);
         }
         Dbar -= D*Eigen::MatrixXd::Identity(order,order);
         state.row(i) = Cbar.colPivHouseholderQr().solve(Dbar * u_history.row(i).transpose() + y);
     }
 }
 
-void LinearSystem::SetInitialState(const Eigen::VectorXd & u_channels)
+void LinearSystem::setInitialState(const Eigen::VectorXd & u_channels)
 {
     if (order > 1)
         throw std::logic_error("SetInitialState cannot be called with a vector as input if the filter order is greater than 1");
@@ -330,10 +330,10 @@ void LinearSystem::SetInitialState(const Eigen::VectorXd & u_channels)
     }
     Eigen::MatrixXd u_history(n_filters, 1);
     u_history.col(0) = u_channels;
-    this->SetInitialState(u_history);
+    this->setInitialState(u_history);
 }
 
-void LinearSystem::SetInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives)
+void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives)
 {
     if (_initialOutputDerivatives.cols() != order)
     {
@@ -355,8 +355,8 @@ void LinearSystem::SetInitialOutputDerivatives(const Eigen::MatrixXd & _initialO
         throw std::logic_error(buffer);
     }
 
-    initialOutputDerivatives = _initialOutputDerivatives;
-    last_output = initialOutputDerivatives.col(0);
+    initial_output_derivatives = _initialOutputDerivatives;
+    last_output = initial_output_derivatives.col(0);
 }
 
 LinearSystem::Time LinearSystem::TimeFromSeconds(double time)

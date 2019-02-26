@@ -53,11 +53,11 @@ void GetYmlData(const YAML::Node & node, int & n, int & order, LinearSystem & ls
     node["den"] >> den;
     node["ydy0"] >> ydy0;
 
-    ls.SetSampling(Ts);
+    ls.setSampling(Ts);
     ls.setPrewarpFrequency(omega);
-    ls.SetFilter(num, den);
-    ls.SetInitialOutputDerivatives(ydy0);
-    ls.SetInitialTime(0);
+    ls.setFilter(num, den);
+    ls.setInitialOutputDerivatives(ydy0);
+    ls.setInitialTime(0);
 }
 
 void printProgress(int width, float progress)
@@ -83,40 +83,40 @@ BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
 {
     std::cout << "[TEST] update timeout" << std::endl;
     LinearSystem sys;
-    sys.UseNFilters(2);
-    sys.SetSampling(0.1);
-    sys.SetMaximumTimeBetweenUpdates(1);
+    sys.useNFilters(2);
+    sys.setSampling(0.1);
+    sys.setMaximumTimeBetweenUpdates(1);
     sys.setIntegrationMethod(IntegrationMethod::BACKWARD_EULER);
 
     Eigen::VectorXd num(3), den(3);
     num << 0, 0, 1;
     den << 1, 2, 1;
-    sys.SetFilter(num, den);
+    sys.setFilter(num, den);
 
     Eigen::MatrixXd ydy0(2,2);
     ydy0 <<   0, 0,
             0.5, 0;
-    sys.SetInitialOutputDerivatives(ydy0);
-    sys.DiscretizeSystem();
+    sys.setInitialOutputDerivatives(ydy0);
+    sys.discretizeSystem();
 
     Eigen::MatrixXd u0 = Eigen::MatrixXd::Zero(2,2);
-    sys.SetInitialState(u0);
-    sys.SetInitialTime(0);
+    sys.setInitialState(u0);
+    sys.setInitialTime(0);
 
     std::cout << "[INFO] not to worry, the following warning is expected" << std::endl;
     Eigen::RowVectorXd y1, y2;
     Eigen::VectorXd u(2);
     u << 1, 1.5;
-    sys.Update(u, LinearSystem::TimeFromSeconds(0.5));
-    y1 = sys.Update(u, LinearSystem::TimeFromSeconds(1));
-    y2 = sys.Update(u, LinearSystem::TimeFromSeconds(2.1));
+    sys.update(u, LinearSystem::TimeFromSeconds(0.5));
+    y1 = sys.update(u, LinearSystem::TimeFromSeconds(1));
+    y2 = sys.update(u, LinearSystem::TimeFromSeconds(2.1));
 
     if ( (y1 - y2).cwiseAbs().maxCoeff() > std::numeric_limits<double>::min() )
     {
         BOOST_ERROR("outputs should be the same if the update took too long to be processed");
     }
 
-    y1 = sys.Update(u, LinearSystem::TimeFromSeconds(3));
+    y1 = sys.update(u, LinearSystem::TimeFromSeconds(3));
     // THESE LIMITS HAVE BEEN HARD CODED!
     if ( (y1 - y2).cwiseAbs().minCoeff() < 0.139545 && (y1 - y2).cwiseAbs().maxCoeff() > 0.142949 )
     {
@@ -129,32 +129,32 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters_simple)
 {
     std::cout << "[TEST] number of filters (simple test)" << std::endl;
     LinearSystem sys;
-    sys.UseNFilters(3);
+    sys.useNFilters(3);
     Eigen::VectorXd num(2), den(2);
     num << 0, 1;
     den << 1, 1;
     BOOST_TEST_PASSPOINT();
-    sys.SetFilter(num, den);
+    sys.setFilter(num, den);
 
     Eigen::MatrixXd ydy0(3,1);
     ydy0 << 1,
             1,
             1;
     BOOST_TEST_PASSPOINT();
-    sys.SetInitialOutputDerivatives(ydy0);
+    sys.setInitialOutputDerivatives(ydy0);
 
     BOOST_TEST_PASSPOINT();
-    sys.DiscretizeSystem();
+    sys.discretizeSystem();
 
     Eigen::VectorXd u0 = Eigen::VectorXd::Zero(3,1);
     BOOST_TEST_PASSPOINT();
-    sys.SetInitialState(u0);
+    sys.setInitialState(u0);
 
     BOOST_TEST_PASSPOINT();
     Eigen::VectorXd input(3);
     input << 2,2,2;
-    sys.SetInitialTime(0);
-    Eigen::VectorXd out = sys.Update(input, LinearSystem::TimeFromSeconds(sys.GetSampling()));
+    sys.setInitialTime(0);
+    Eigen::VectorXd out = sys.update(input, LinearSystem::TimeFromSeconds(sys.getSampling()));
     double delta = 1e-15;
     if (std::abs(out(0) - out(1)) > delta || std::abs(out(1) != out(2)) > delta)
     {
@@ -204,17 +204,17 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         // Tustin
         BOOST_TEST_PASSPOINT();
         tustin_ls.setIntegrationMethod(IntegrationMethod::TUSTIN);
-        tustin_ls.DiscretizeSystem();
-        tustin_ls.SetInitialState(u0);
+        tustin_ls.discretizeSystem();
+        tustin_ls.setInitialState(u0);
 
-        // Update filters
+        // update filters
         for (int i = 0; i < n; i++)
         {
             LinearSystem::Time time = LinearSystem::TimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();
-            y_tustin(i) = tustin_ls.Update(u_i, time)(0);
+            y_tustin(i) = tustin_ls.update(u_i, time)(0);
         }
 
         double delta = 1e-5;
@@ -277,35 +277,35 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         // Tustin
         BOOST_TEST_PASSPOINT();
         tustin_ls.setIntegrationMethod(IntegrationMethod::TUSTIN);
-        tustin_ls.DiscretizeSystem();
-        tustin_ls.SetInitialState(u0);
+        tustin_ls.discretizeSystem();
+        tustin_ls.setInitialState(u0);
 
         // Forward Euler
         BOOST_TEST_PASSPOINT();
         fwd_ls.setIntegrationMethod(IntegrationMethod::FORWARD_EULER);
-        fwd_ls.DiscretizeSystem();
-        fwd_ls.SetInitialState(u0);
+        fwd_ls.discretizeSystem();
+        fwd_ls.setInitialState(u0);
 
         // Backward Euler
         BOOST_TEST_PASSPOINT();
         bwd_ls.setIntegrationMethod(IntegrationMethod::BACKWARD_EULER);
-        bwd_ls.DiscretizeSystem();
-        bwd_ls.SetInitialState(u0);
+        bwd_ls.discretizeSystem();
+        bwd_ls.setInitialState(u0);
 
-        // Update filters
+        // update filters
         for (int i = 0; i < n; i++)
         {
             LinearSystem::Time time = LinearSystem::TimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();
-            y_tustin(i) = tustin_ls.Update(u_i, time)(0);
+            y_tustin(i) = tustin_ls.update(u_i, time)(0);
 
             BOOST_TEST_PASSPOINT();
-            y_fwd(i) = fwd_ls.Update(u_i, time)(0);
+            y_fwd(i) = fwd_ls.update(u_i, time)(0);
 
             BOOST_TEST_PASSPOINT();
-            y_bwd(i) = bwd_ls.Update(u_i, time)(0);
+            y_bwd(i) = bwd_ls.update(u_i, time)(0);
         }
 
         double delta = 1e-5;

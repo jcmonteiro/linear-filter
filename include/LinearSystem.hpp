@@ -39,10 +39,10 @@ private:
     Eigen::MatrixXd state; //States of the state-space in matrix form (numInputs,stateSize)
 
     /*! @brief Filter numerator tfNum[0] s^N + tfNum[1] s^(N-1) + ... + tfNum[N] */
-    Eigen::VectorXd tfNum;
+    Eigen::VectorXd tf_num;
 
     /*! @brief Filter denominator tfDen[0] s^N + tfDen[1] s^(N-1) + ... + tfDen[N] */
-    Eigen::VectorXd tfDen;
+    Eigen::VectorXd tf_den;
 
     /*! @brief Sampling period (in seconds) */
     double Ts;
@@ -64,7 +64,7 @@ private:
      *
      * Each row contains the j-th filter output and its N-1 derivatives at time t = 0
      */
-    Eigen::MatrixXd initialOutputDerivatives;
+    Eigen::MatrixXd initial_output_derivatives;
 
     /*! @brief Maximum amount time between successive calls to Update */
     Time max_delta;
@@ -81,20 +81,20 @@ private:
      */
     double prewarp_frequency;
 
-    void ConvertFwdEuler(Eigen::VectorXd & poly) const;
-    void ConvertBwdEuler(Eigen::VectorXd & poly) const;
-    void ConvertTustin(Eigen::VectorXd & poly) const;
+    void convertFwdEuler(Eigen::VectorXd & poly) const;
+    void convertBwdEuler(Eigen::VectorXd & poly) const;
+    void convertTustin(Eigen::VectorXd & poly) const;
 
     /*!
-     * \brief Update Updates all filters (one sample period) based on the given inputs
+     * \brief update Updates all filters (one sample period) based on the given inputs
      * \param signalIn input signals
      */
-    void Update(const Eigen::RowVectorXd &signalIn);
+    void update(const Eigen::RowVectorXd &signalIn);
 
     /*!
-     * \brief TF2SS Computes the state-space realization (A,B,C,D)
+     * \brief tf2ss Computes the state-space realization (A,B,C,D)
      */
-    void TF2SS();
+    void tf2ss();
 
 public:
     LinearSystem(Eigen::VectorXd _tfNum = Eigen::VectorXd::Zero(2), Eigen::VectorXd _tfDen = Eigen::VectorXd::Constant(2,1),
@@ -131,39 +131,39 @@ public:
     inline double getPrewarpFrequency() {return prewarp_frequency;}
 
     /*!
-     * \brief GetOrder Returns the filter order
+     * \brief getOrder Returns the filter order
      * \return The filter order
      */
-    inline unsigned int GetOrder() const
+    inline unsigned int getOrder() const
     {
-        return tfDen.size() - 1;
+        return tf_den.size() - 1;
     }
 
     /*!
-     * \brief GetCoefficients Returns the filters coefficients
+     * \brief getCoefficients Returns the filters coefficients
      * \param coef_num Numerator coefficients
      * \param coef_den Denominator coefficients
      */
-    inline void GetCoefficients(Eigen::VectorXd & coef_num, Eigen::VectorXd & coef_den) const
+    inline void getCoefficients(Eigen::VectorXd & coef_num, Eigen::VectorXd & coef_den) const
     {
-        coef_num = tfNum;
-        coef_den = tfDen;
+        coef_num = tf_num;
+        coef_den = tf_den;
     }
 
     /*!
      * \brief UseNFilters Chooses how many filters should run in parallel
      */
-    void UseNFilters(const unsigned int n_filters);
+    void useNFilters(const unsigned int n_filters);
 
     /*!
-     * \brief SetFilter Configures the numerator and denominator used by the filters
+     * \brief setFilter Configures the numerator and denominator used by the filters
      * \param coef_num Numerator coefficients coef_num[0] s^N + coef_num[1] s^(N-1) + ... + coef_num[N]
      * \param coef_den Denominator coefficients coef_den[0] s^N + coef_den[1] s^(N-1) + ... + coef_den[N]
      */
-    void SetFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den);
+    void setFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den);
 
     /*!
-     * \brief SetSampling Sets the sampling period (in seconds)
+     * \brief setSampling Sets the sampling period (in seconds)
      *
      * A call to this method silently changes the maximum allowed time between updates
      * if the new sampling period >= GetMaximumTimeBetweenUpdates(). When this happens,
@@ -171,54 +171,58 @@ public:
      *
      * \param sampling_period positive sampling period
      */
-    void SetSampling(const double sampling_period);
+    void setSampling(const double sampling_period);
 
     /**
-     * @brief GetSampling Returns the sampling period.
+     * @brief getSampling Returns the sampling period.
      * @return The sampling period.
      */
-    inline double GetSampling() const {return Ts;}
+    inline double getSampling() const {return Ts;}
 
     /*!
-     * \brief GetMaximumTimeBetweenUpdates Returns the maximum time (in seconds) between calls to Update
+     * \brief getMaximumTimeBetweenUpdates Returns the maximum time (in seconds) between calls to Update
      * \return The maximum time between updates
      */
-    inline double GetMaximumTimeBetweenUpdates() const {return ((double) max_delta) / 1000000;}
+    inline double getMaximumTimeBetweenUpdates() const {return ((double) max_delta) / 1000000;}
 
     /*!
-     * \brief GetNFilters Returns the number of filters
+     * \brief getNFilters Returns the number of filters
      * \return The number of filters
      */
-    inline unsigned int GetNFilters() const {return n_filters;}
+    inline unsigned int getNFilters() const {return n_filters;}
 
-    inline const Eigen::VectorXd & GetOutput() {return last_output;}
+    inline const Eigen::VectorXd & getOutput() {return last_output;}
 
     /*!
-     * \brief SetMaximumTimeBetweenUpdates Sets the maximum time (in seconds) between calls to Update
+     * \brief setMaximumTimeBetweenUpdates Sets the maximum time (in seconds) between calls to Update
      * \param delta_time The maximum time between updates
      */
-    void SetMaximumTimeBetweenUpdates(double delta_time);
+    void setMaximumTimeBetweenUpdates(double delta_time);
 
     /*!
-     * \brief DiscretizeSystem Transforms the filter to discrete time
+     * \brief discretizeSystem Transforms the filter to discrete time
      */
-    void DiscretizeSystem();
-
-    inline void SetInitialTime(Time time) {time_current = time; time_init_set = true;}
+    void discretizeSystem();
 
     /*!
-     * \brief Update Updates all filters based on the given inputs until they reach the current time
+     * \brief setInitialTime Sets the filter initial time
+     * \param time The initial time
+     */
+    inline void setInitialTime(Time time) {time_current = time; time_init_set = true;}
+
+    /*!
+     * \brief update Updates all filters based on the given inputs until they reach the current time
      * \param signalIn input signals
      * \param time current time (in microseconds)
      * \return The output of every filter
      */
-    Eigen::VectorXd Update(const Eigen::RowVectorXd &signalIn, Time time);
+    Eigen::VectorXd update(const Eigen::RowVectorXd &signalIn, Time time);
 
-    void SetState(Eigen::MatrixXd _state){state = _state;}
-    inline Eigen::MatrixXd GetState() const {return state;}
+    void setState(Eigen::MatrixXd _state){state = _state;}
+    inline Eigen::MatrixXd setState() const {return state;}
 
     /*!
-     * \brief SetInitialState Sets the initial state x[0] of the N-th order filter
+     * \brief setInitialState Sets the initial state x[0] of the N-th order filter
      *
      * The initial state is computed from:
      *     u[0], ..., u[-(N-1)], the current and N-1 past input samples
@@ -229,20 +233,20 @@ public:
      * \param u_history each i-th row holds u_i[0], ..., u_i[-(N-1)], in this order
      * \see SetInitialOutputDerivatives
      */
-    void SetInitialState(const Eigen::MatrixXd & u_history);
+    void setInitialState(const Eigen::MatrixXd & u_history);
 
     /*!
-     * \brief SetInitialState Sets the initial state x[0] of the 1-st order filter
+     * \brief setInitialState Sets the initial state x[0] of the 1-st order filter
      *
      * This method should only be called when the filter is of 1-st order
      *
      * \param u_channels holds u_1[0], u_2[0], ..., u_M[0], where M is the number of filters
      * \see UseNFilters
      */
-    void SetInitialState(const Eigen::VectorXd & u_channels);
+    void setInitialState(const Eigen::VectorXd & u_channels);
 
     /*!
-     * \brief SetInitialOutputDerivatives Sets the initial output and its N-1 derivatives,
+     * \brief setInitialOutputDerivatives Sets the initial output and its N-1 derivatives,
      * where N is the filter order, for each channel
      *
      * Every row contains y[0], dy/dt[0], ..., d^(N-1)y/dt^(N-1)[0], in this order and each row
@@ -250,7 +254,7 @@ public:
      *
      * \param _initialOutputDerivatives
      */
-    void SetInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives);
+    void setInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives);
 };
 
 }
