@@ -7,10 +7,16 @@ set(LIBNAME "linear_system")
 find_package(Boost COMPONENTS unit_test_framework)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
-
+find_package(pybind11)
 
 include_directories("include" ${EIGEN3_INCLUDE_DIRS})
 add_library(${LIBNAME} SHARED "src/LinearSystem.cpp;src/HelperFunctions.cpp")
+
+# Python bindings
+if (pybind11_FOUND)
+    pybind11_add_module(${LIBNAME}_py src/python_bindings.cpp)
+    target_link_libraries(${LIBNAME}_py ${LIBNAME})
+endif ()
 
 # Unit tests
 if (Boost_FOUND)
