@@ -37,6 +37,7 @@ PYBIND11_MODULE(linear_system_py, m) {
              py::arg("ts") = 0.001,
              py::arg("integration_method") = TUSTIN,
              py::arg("prewarp") = 0)
+        .def_static("getTimeFromSeconds", &LinearSystem::getTimeFromSeconds)
         .def("setIntegrationMethod", &LinearSystem::setIntegrationMethod)
         .def("getIntegrationMethod", &LinearSystem::getIntegrationMethod)
         .def("setPrewarpFrequency", &LinearSystem::setPrewarpFrequency)
