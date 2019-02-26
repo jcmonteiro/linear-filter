@@ -15,8 +15,8 @@ LinearSystem::LinearSystem(Eigen::VectorXd _tfNum, Eigen::VectorXd _tfDen, doubl
     this->SetSampling(_Ts);
     this->SetMaximumTimeBetweenUpdates(DEFAULT_MAX_TIME_BETWEEN_UPDATES);
 
-    integrationMethod = _integrationMethod;
-    prewarpFrequency = _prewarpFrequency;
+    integration_method = _integrationMethod;
+    prewarp_frequency = _prewarpFrequency;
 }
 
 void LinearSystem::UseNFilters(const unsigned int n_filters)
@@ -126,7 +126,7 @@ void LinearSystem::ConvertTustin(Eigen::VectorXd & poly) const
     //
     Eigen::VectorXd tustin_sum(order + 1);
     Eigen::VectorXd tustin_coefs(order + 1);
-    double tustin_a = (prewarpFrequency != 0) ? prewarpFrequency / tan(prewarpFrequency * Ts / 2) : 2 / Ts;
+    double tustin_a = (prewarp_frequency != 0) ? prewarp_frequency / tan(prewarp_frequency * Ts / 2) : 2 / Ts;
     //
     for (unsigned int k = 0; k <= order; k++)
     {
@@ -145,7 +145,7 @@ void LinearSystem::ConvertTustin(Eigen::VectorXd & poly) const
 
 void LinearSystem::DiscretizeSystem()
 {
-    switch(integrationMethod)
+    switch(integration_method)
     {
     case FORWARD_EULER:
         this->ConvertFwdEuler(tfNum);

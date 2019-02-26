@@ -54,7 +54,7 @@ void GetYmlData(const YAML::Node & node, int & n, int & order, LinearSystem & ls
     node["ydy0"] >> ydy0;
 
     ls.SetSampling(Ts);
-    ls.prewarpFrequency = omega;
+    ls.setPrewarpFrequency(omega);
     ls.SetFilter(num, den);
     ls.SetInitialOutputDerivatives(ydy0);
     ls.SetInitialTime(0);
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
     sys.UseNFilters(2);
     sys.SetSampling(0.1);
     sys.SetMaximumTimeBetweenUpdates(1);
-    sys.integrationMethod = IntegrationMethod::BACKWARD_EULER;
+    sys.setIntegrationMethod(IntegrationMethod::BACKWARD_EULER);
 
     Eigen::VectorXd num(3), den(3);
     num << 0, 0, 1;
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
 
         // Tustin
         BOOST_TEST_PASSPOINT();
-        tustin_ls.integrationMethod = IntegrationMethod::TUSTIN;
+        tustin_ls.setIntegrationMethod(IntegrationMethod::TUSTIN);
         tustin_ls.DiscretizeSystem();
         tustin_ls.SetInitialState(u0);
 
@@ -276,19 +276,19 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
 
         // Tustin
         BOOST_TEST_PASSPOINT();
-        tustin_ls.integrationMethod = IntegrationMethod::TUSTIN;
+        tustin_ls.setIntegrationMethod(IntegrationMethod::TUSTIN);
         tustin_ls.DiscretizeSystem();
         tustin_ls.SetInitialState(u0);
 
         // Forward Euler
         BOOST_TEST_PASSPOINT();
-        fwd_ls.integrationMethod = IntegrationMethod::FORWARD_EULER;
+        fwd_ls.setIntegrationMethod(IntegrationMethod::FORWARD_EULER);
         fwd_ls.DiscretizeSystem();
         fwd_ls.SetInitialState(u0);
 
         // Backward Euler
         BOOST_TEST_PASSPOINT();
-        bwd_ls.integrationMethod = IntegrationMethod::BACKWARD_EULER;
+        bwd_ls.setIntegrationMethod(IntegrationMethod::BACKWARD_EULER);
         bwd_ls.DiscretizeSystem();
         bwd_ls.SetInitialState(u0);
 

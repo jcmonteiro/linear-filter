@@ -1,7 +1,8 @@
 #pragma once
 
-#include <eigen3/Eigen/Eigen>
+#include <Eigen/Eigen>
 #include <stdint.h>
+#include <stdexcept>
 
 namespace linear_system
 {
@@ -68,6 +69,18 @@ private:
     /*! @brief Maximum amount time between successive calls to Update */
     Time max_delta;
 
+    /*! @brief Integration method */
+    IntegrationMethod integration_method;
+
+    /*!
+     * @brief Prewarp frequency
+     *
+     * Frequency (in rad/s) for which the magnitude response does not change when going
+     * from continuous to discrete-time. This is only considered when using Tustin
+     * integration method.
+     */
+    double prewarp_frequency;
+
     void ConvertFwdEuler(Eigen::VectorXd & poly) const;
     void ConvertBwdEuler(Eigen::VectorXd & poly) const;
     void ConvertTustin(Eigen::VectorXd & poly) const;
@@ -84,24 +97,42 @@ private:
     void TF2SS();
 
 public:
-    /*! @brief Integration method */
-    IntegrationMethod integrationMethod;
-
-    /*!
-     * @brief Prewarp frequency
-     *
-     * Frequency (in rad/s) for which the magnitude response does not change when going
-     * from continuous to discrete-time. This is only considered when using Tustin
-     * integration method.
-     */
-    double prewarpFrequency;
-
     LinearSystem(Eigen::VectorXd _tfNum = Eigen::VectorXd::Zero(2), Eigen::VectorXd _tfDen = Eigen::VectorXd::Constant(2,1),
                      double _Ts = 0.001, IntegrationMethod _integrationMethod = TUSTIN, double _prewarpFrequency = 0);
 
     /*!
-     * \brief GetOrder Returns the filter order.
-     * \return The filter order.
+     * \brief setIntegrationMethod Configures the integration method
+     * \param method The integration method
+     */
+    inline void setIntegrationMethod(IntegrationMethod method) {integration_method = method;}
+
+    /*!
+     * \brief getIntegrationMethod Returns the integration method
+     * \return The integration method
+     */
+    inline IntegrationMethod getIntegrationMethod() {return integration_method;}
+
+    /*!
+     * \brief setPrewarpFrequency Configures the prewarp frequency used with Tustin's integration method
+     * \param frequency The prewarp frequency
+     */
+    inline void setPrewarpFrequency(double frequency)
+    {
+        if (frequency >= 0)
+            prewarp_frequency = frequency;
+        else
+            throw std::invalid_argument("LinearSystem::setPrewarpFrequency - frequency must be nonnegative");
+    }
+
+    /*!
+     * \brief getPrewarpFrequency Returns the prewarp frequency used with Tustin's integration method
+     * \return The prewarp frequency
+     */
+    inline double getPrewarpFrequency() {return prewarp_frequency;}
+
+    /*!
+     * \brief GetOrder Returns the filter order
+     * \return The filter order
      */
     inline unsigned int GetOrder() const
     {
