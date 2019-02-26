@@ -34,6 +34,27 @@ class Data:
         self.res_tustin = np.array(data_dict["y_tustin"])
         self.input = np.array(data_dict["u"])
 
+class ProgressBar:
+    def __init__(self, maxval = 100, width = 20):
+        self.max = float(maxval)
+        self.width = int(width)
+
+    def update(self, value):
+        if (value < 0):
+            value = 0
+        elif (value > self.max):
+            value = self.max
+
+        rate = value / self.max
+        fmt = "[%-" + str(self.width) + "s] %d%%"
+
+        # reset the cursor to the beginning of the line
+        sys.stdout.write('\r')
+        # print the progress bar
+        sys.stdout.write(fmt % ('=' * int(rate * self.width), 100 * rate))
+        # force everything to be printed
+        sys.stdout.flush()
+
 def computeError(vec1, vec2):
     return np.amax( np.absolute( vec1 - vec2 ) )
 
@@ -46,7 +67,11 @@ class TestLinearSystem(unittest.TestCase):
         print("Loaded!")
 
         tolerance = 1e-5
+        progress = ProgressBar( len(doc) )
+        n_info = 0
         for info in doc:
+            n_info += 1
+            progress.update(n_info)
             data = Data(info)
             filters = initFilters(data)
 
@@ -70,6 +95,7 @@ class TestLinearSystem(unittest.TestCase):
 
             max_error = computeError(res_filters[2], data.res_bwd)
             self.assertTrue(max_error < tolerance)
+        print("")
 
 if __name__ == "__main__":
     unittest.main()
