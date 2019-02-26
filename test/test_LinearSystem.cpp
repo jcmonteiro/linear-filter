@@ -107,16 +107,16 @@ BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
     Eigen::RowVectorXd y1, y2;
     Eigen::VectorXd u(2);
     u << 1, 1.5;
-    sys.update(u, LinearSystem::TimeFromSeconds(0.5));
-    y1 = sys.update(u, LinearSystem::TimeFromSeconds(1));
-    y2 = sys.update(u, LinearSystem::TimeFromSeconds(2.1));
+    sys.update(u, LinearSystem::getTimeFromSeconds(0.5));
+    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(1));
+    y2 = sys.update(u, LinearSystem::getTimeFromSeconds(2.1));
 
     if ( (y1 - y2).cwiseAbs().maxCoeff() > std::numeric_limits<double>::min() )
     {
         BOOST_ERROR("outputs should be the same if the update took too long to be processed");
     }
 
-    y1 = sys.update(u, LinearSystem::TimeFromSeconds(3));
+    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(3));
     // THESE LIMITS HAVE BEEN HARD CODED!
     if ( (y1 - y2).cwiseAbs().minCoeff() < 0.139545 && (y1 - y2).cwiseAbs().maxCoeff() > 0.142949 )
     {
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters_simple)
     Eigen::VectorXd input(3);
     input << 2,2,2;
     sys.setInitialTime(0);
-    Eigen::VectorXd out = sys.update(input, LinearSystem::TimeFromSeconds(sys.getSampling()));
+    Eigen::VectorXd out = sys.update(input, LinearSystem::getTimeFromSeconds(sys.getSampling()));
     double delta = 1e-15;
     if (std::abs(out(0) - out(1)) > delta || std::abs(out(1) != out(2)) > delta)
     {
@@ -208,13 +208,13 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         tustin_ls.setInitialState(u0);
 
         // update filters
-        for (int i = 0; i < n; i++)
+        for (int k = 0; k < n; ++k)
         {
-            LinearSystem::Time time = LinearSystem::TimeFromSeconds( (i+1) * Ts );
-            u_i(0) = u(i);
+            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
+            u_i(0) = u(k);
 
             BOOST_TEST_PASSPOINT();
-            y_tustin(i) = tustin_ls.update(u_i, time)(0);
+            y_tustin(k) = tustin_ls.update(u_i, time)(0);
         }
 
         double delta = 1e-5;
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         // update filters
         for (int i = 0; i < n; i++)
         {
-            LinearSystem::Time time = LinearSystem::TimeFromSeconds( (i+1) * Ts );
+            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();

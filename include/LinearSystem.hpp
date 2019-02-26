@@ -26,7 +26,7 @@ public:
     /*! @brief Default maximum time (in seconds) that is allowed to pass between calls to Update */
     const static double DEFAULT_MAX_TIME_BETWEEN_UPDATES;
 
-    static Time TimeFromSeconds(double time);
+    static Time getTimeFromSeconds(double time);
 
 private:
     //SS realization
