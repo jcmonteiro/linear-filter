@@ -218,8 +218,8 @@ public:
      */
     Eigen::VectorXd update(const Eigen::RowVectorXd &signalIn, Time time);
 
-    void setState(Eigen::MatrixXd _state){state = _state;}
-    inline Eigen::MatrixXd setState() const {return state;}
+    void setState(const Eigen::MatrixXd &_state){state = _state;}
+    inline Eigen::MatrixXd getState() const {return state;}
 
     /*!
      * \brief setInitialState Sets the initial state x[0] of the N-th order filter
