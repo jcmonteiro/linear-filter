@@ -9,7 +9,7 @@ find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 
-include_directories("include")
+include_directories("include" ${EIGEN3_INCLUDE_DIRS})
 add_library(${LIBNAME} SHARED "src/LinearSystem.cpp;src/HelperFunctions.cpp")
 
 # Unit tests
