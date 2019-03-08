@@ -15,7 +15,7 @@ add_library(${LIBNAME} SHARED "src/LinearSystem.cpp;src/HelperFunctions.cpp")
 # Python bindings
 if (pybind11_FOUND)
     pybind11_add_module(${LIBNAME}_py src/python_bindings.cpp)
-    target_link_libraries(${LIBNAME}_py ${LIBNAME})
+    target_link_libraries(${LIBNAME}_py PUBLIC ${LIBNAME})
 endif ()
 
 # Unit tests
