@@ -27,7 +27,7 @@ if (Boost_FOUND AND yaml-cpp_FOUND)
     add_test(NAME test-1 COMMAND test-library)
 endif ()
 
-# Install
+# Install cpp library
 set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "include/LinearSystem.hpp")
 install(
     TARGETS ${LIBNAME}
@@ -41,3 +41,11 @@ install(
     FILE "${LIBNAME}-config.cmake"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/${LIBNAME}/cmake"
 )
+
+# Install python library
+if (pybind11_FOUND)
+    install(
+        TARGETS ${LIBNAME}_py
+        LIBRARY DESTINATION "lib/python${PYBIND11_PYTHON_VERSION}/dist-packages/${LIBNAME}"
+    )
+endif ()
