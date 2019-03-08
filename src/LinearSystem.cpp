@@ -313,6 +313,9 @@ void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
         Dbar -= D*Eigen::MatrixXd::Identity(order,order);
         state.row(i) = Cbar.colPivHouseholderQr().solve(Dbar * u_history.row(i).transpose() + y);
     }
+
+    // Reset initial output
+    last_output = initial_output_derivatives.col(0);
 }
 
 void LinearSystem::setInitialState(const Eigen::VectorXd & u_channels)
