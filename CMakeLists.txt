@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(LIBNAME "linear_system")
 
 find_package(Boost COMPONENTS unit_test_framework)
-find_package(yaml-cpp REQUIRED)
+find_package(yaml-cpp)
 find_package(Eigen3 REQUIRED)
 find_package(pybind11)
 
@@ -19,7 +19,7 @@ if (pybind11_FOUND)
 endif ()
 
 # Unit tests
-if (Boost_FOUND)
+if (Boost_FOUND AND yaml-cpp_FOUND)
     ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
     add_executable(test-library "test/test_LinearSystem.cpp")
     target_include_directories(test-library PRIVATE ${Boost_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
