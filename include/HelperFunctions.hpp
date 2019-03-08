@@ -88,4 +88,12 @@ void PolynomialDivision(const Eigen::MatrixBase<Derived> & N, const Eigen::Matri
     r = N_aux;
 }
 
+/*!
+ * \brief Wraps the angle to the (-pi,pi] interval
+ *
+ * \param ang angle to be wrapped
+ */
+void wrap2pi(double &ang);
+void wrap2pi(Eigen::VectorXd &ang);
+
 }

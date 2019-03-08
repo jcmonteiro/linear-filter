@@ -28,7 +28,7 @@ if (Boost_FOUND AND yaml-cpp_FOUND)
 endif ()
 
 # Install cpp library
-set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "include/LinearSystem.hpp")
+set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "include/LinearSystem.hpp;include/HelperFunctions.hpp")
 install(
     TARGETS ${LIBNAME}
     EXPORT "${LIBNAME}-export"
