@@ -14,8 +14,22 @@ add_library(${LIBNAME} SHARED "src/LinearSystem.cpp;src/HelperFunctions.cpp")
 
 # Python bindings
 if (pybind11_FOUND)
-    pybind11_add_module(${LIBNAME}_py src/python_bindings.cpp)
+    pybind11_add_module(${LIBNAME}_py python/python_bindings.cpp)
     target_link_libraries(${LIBNAME}_py PUBLIC ${LIBNAME})
+    set(BUILD_PYTHON_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}")
+    set_target_properties(${LIBNAME}_py
+        PROPERTIES
+        SUFFIX ".so"
+        LIBRARY_OUTPUT_DIRECTORY "${BUILD_PYTHON_DIR}"
+    )
+    configure_file(
+        "python/__init__.py"
+        "${BUILD_PYTHON_DIR}/__init__.py"
+    )
+    configure_file(
+        "python/setup.py"
+        "${BUILD_PYTHON_DIR}/setup.py"
+    )
 endif ()
 
 # Unit tests
@@ -44,8 +58,6 @@ install(
 
 # Install python library
 if (pybind11_FOUND)
-    install(
-        TARGETS ${LIBNAME}_py
-        LIBRARY DESTINATION "lib/python${PYBIND11_PYTHON_VERSION}/dist-packages/${LIBNAME}"
-    )
+    install(CODE "execute_process(COMMAND python3 setup.py install
+        --prefix=${CMAKE_INSTALL_PREFIX} WORKING_DIRECTORY ${BUILD_PYTHON_DIR})")
 endif ()
