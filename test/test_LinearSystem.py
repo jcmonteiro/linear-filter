@@ -3,7 +3,7 @@ import yaml, unittest
 
 import sys
 sys.path.append('../build')
-from linear_system_py import LinearSystem, IntegrationMethod
+from linear_system import LinearSystem, IntegrationMethod
 
 def initFilters(data):
     res = (LinearSystem(),LinearSystem(),LinearSystem())
