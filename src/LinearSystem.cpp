@@ -168,8 +168,14 @@ void LinearSystem::discretizeSystem()
 
 void LinearSystem::tf2ss()
 {
-    if (order <= 0)
-        throw std::logic_error("invalid system order");
+    if (order == 0)
+    {
+        A.setZero();
+        B.setZero();
+        C.setZero();
+        D = tf_num[0];
+        return;
+    }
 
     Eigen::VectorXd num(order + 1);
 
@@ -222,7 +228,8 @@ Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time ti
             u_history.col(k) = signalIn;
         //
         ydy.setZero();
-        ydy.col(0) = last_output;
+        if (order > 0)
+            ydy.col(0) = last_output;
         //
         setInitialOutputDerivatives(ydy);
         setInitialState(u_history);
@@ -278,6 +285,11 @@ void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
     if (u_history.rows() != n_filters)
     {
         throw std::logic_error("the number of input channels is different from the number of filters");
+    }
+
+    if (order == 0)
+    {
+        return;
     }
 
     Eigen::MatrixXd Cbar(order,order);
@@ -359,7 +371,8 @@ void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & _initialO
     }
 
     initial_output_derivatives = _initialOutputDerivatives;
-    last_output = initial_output_derivatives.col(0);
+    if (order > 0)
+        last_output = initial_output_derivatives.col(0);
 }
 
 LinearSystem::Time LinearSystem::getTimeFromSeconds(double time)

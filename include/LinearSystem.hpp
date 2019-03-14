@@ -97,7 +97,7 @@ private:
     void tf2ss();
 
 public:
-    LinearSystem(Eigen::VectorXd _tfNum = Eigen::VectorXd::Zero(2), Eigen::VectorXd _tfDen = Eigen::VectorXd::Constant(2,1),
+    LinearSystem(Eigen::VectorXd _tfNum = Eigen::VectorXd::Zero(1), Eigen::VectorXd _tfDen = Eigen::VectorXd::Constant(1,1),
                      double _Ts = 0.001, IntegrationMethod _integrationMethod = TUSTIN, double _prewarpFrequency = 0);
 
     /*!
