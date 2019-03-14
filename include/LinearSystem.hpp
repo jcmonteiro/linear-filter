@@ -110,7 +110,7 @@ public:
      * \brief getIntegrationMethod Returns the integration method
      * \return The integration method
      */
-    inline IntegrationMethod getIntegrationMethod() {return integration_method;}
+    inline IntegrationMethod getIntegrationMethod() const {return integration_method;}
 
     /*!
      * \brief setPrewarpFrequency Configures the prewarp frequency used with Tustin's integration method
@@ -128,7 +128,7 @@ public:
      * \brief getPrewarpFrequency Returns the prewarp frequency used with Tustin's integration method
      * \return The prewarp frequency
      */
-    inline double getPrewarpFrequency() {return prewarp_frequency;}
+    inline double getPrewarpFrequency() const {return prewarp_frequency;}
 
     /*!
      * \brief getOrder Returns the filter order
@@ -191,7 +191,7 @@ public:
      */
     inline unsigned int getNFilters() const {return n_filters;}
 
-    inline const Eigen::VectorXd & getOutput() {return last_output;}
+    inline const Eigen::VectorXd & getOutput() const {return last_output;}
 
     /*!
      * \brief setMaximumTimeBetweenUpdates Sets the maximum time (in seconds) between calls to Update
