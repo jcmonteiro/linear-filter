@@ -309,7 +309,8 @@ void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
 
         for (unsigned int j = 1; j < order; j++)
         {
-            tmp = A.transpose().colPivHouseholderQr().solve(Cbar.row(j-1).transpose()); // equivalent to tmp = Cbar(j-1,:) / A
+            // equivalent to tmp = Cbar(j-1,:) / A
+            tmp = A.transpose().colPivHouseholderQr().solve(Cbar.row(j-1).transpose()).transpose();
             Cbar.row(j) = tmp;
             Dbar(j,1) = tmp * B;
 
