@@ -19,7 +19,7 @@ LinearSystem::LinearSystem(Eigen::VectorXd _tfNum, Eigen::VectorXd _tfDen, doubl
     prewarp_frequency = _prewarpFrequency;
 }
 
-void LinearSystem::useNFilters(const unsigned int n_filters)
+void LinearSystem::useNFilters(unsigned int n_filters)
 {
     if (n_filters == 0)
         throw std::logic_error("received n_filters = 0, but LinearSystem must implement at least one filter");
@@ -76,7 +76,7 @@ void LinearSystem::setFilter(const Eigen::VectorXd & coef_num, const Eigen::Vect
     last_output.setZero(n_filters);
 }
 
-void LinearSystem::setSampling(const double sampling_period)
+void LinearSystem::setSampling(double sampling_period)
 {
     if (sampling_period <= 0.0)
         throw std::logic_error("non positive sampling time given");

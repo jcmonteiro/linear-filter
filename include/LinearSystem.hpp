@@ -153,7 +153,7 @@ public:
     /*!
      * \brief UseNFilters Chooses how many filters should run in parallel
      */
-    void useNFilters(const unsigned int n_filters);
+    void useNFilters(unsigned int n_filters);
 
     /*!
      * \brief setFilter Configures the numerator and denominator used by the filters
@@ -171,7 +171,7 @@ public:
      *
      * \param sampling_period positive sampling period
      */
-    void setSampling(const double sampling_period);
+    void setSampling(double sampling_period);
 
     /**
      * @brief getSampling Returns the sampling period.
