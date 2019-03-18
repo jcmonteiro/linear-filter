@@ -219,7 +219,8 @@ Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time ti
     }
     else if (delta > max_delta)
     {
-        std::fprintf(stderr, "[WARN] (LinearSystem) There has been a long time since the last update (%.3f seconds)", getMaximumTimeBetweenUpdates());
+        std::fprintf(stderr, "[WARN] (LinearSystem) There has been a long time since the last update (%.3f > %.3f seconds)",
+                     ((double) delta) / 1000000, getMaximumTimeBetweenUpdates());
         std::cerr << ". The filter will reset its state (based on the current input) to match the last output. If this is not acceptable, "
                   << "adjust the maximum update time in setMaximumUpdateTime." << std::endl;
         Eigen::MatrixXd u_history(n_filters, order), ydy(n_filters, order);
