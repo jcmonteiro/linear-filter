@@ -1,16 +1,40 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 project(linear-system)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(LIBNAME "linear_system")
 
-find_package(Boost COMPONENTS unit_test_framework)
-find_package(yaml-cpp)
+if(CMAKE_BUILD_TYPE MATCHES DEBUG OR CMAKE_BUILD_TYPE MATCHES Debug)
+    # debug mode stuff here
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og")
+else()
+    # release mode stuff here
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+endif()
+
+macro(use_cxx11)
+  if (CMAKE_VERSION VERSION_LESS "3.1")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+    endif ()
+  else ()
+    set (CMAKE_CXX_STANDARD 11)
+  endif ()
+endmacro(use_cxx11)
+
+use_cxx11()
+
+find_package(Boost QUIET COMPONENTS unit_test_framework)
+find_package(yaml-cpp QUIET)
 find_package(Eigen3 REQUIRED)
-find_package(pybind11)
+find_package(pybind11 QUIET)
 
 include_directories("include" ${EIGEN3_INCLUDE_DIRS})
-add_library(${LIBNAME} SHARED "src/LinearSystem.cpp;src/HelperFunctions.cpp")
+set(LIBRARY_SOURCES
+    src/HelperFunctions.cpp
+    src/LinearSystem.cpp
+)
+add_library(${LIBNAME} SHARED "${LIBRARY_SOURCES}")
 
 # Python bindings
 if (pybind11_FOUND)

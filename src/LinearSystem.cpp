@@ -19,7 +19,7 @@ LinearSystem::LinearSystem(Eigen::VectorXd _tfNum, Eigen::VectorXd _tfDen, doubl
     prewarp_frequency = _prewarpFrequency;
 }
 
-void LinearSystem::useNFilters(const unsigned int n_filters)
+void LinearSystem::useNFilters(unsigned int n_filters)
 {
     if (n_filters == 0)
         throw std::logic_error("received n_filters = 0, but LinearSystem must implement at least one filter");
@@ -76,7 +76,7 @@ void LinearSystem::setFilter(const Eigen::VectorXd & coef_num, const Eigen::Vect
     last_output.setZero(n_filters);
 }
 
-void LinearSystem::setSampling(const double sampling_period)
+void LinearSystem::setSampling(double sampling_period)
 {
     if (sampling_period <= 0.0)
         throw std::logic_error("non positive sampling time given");
@@ -310,7 +310,8 @@ void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
 
         for (unsigned int j = 1; j < order; j++)
         {
-            tmp = A.transpose().colPivHouseholderQr().solve(Cbar.row(j-1).transpose()); // equivalent to tmp = Cbar(j-1,:) / A
+            // equivalent to tmp = Cbar(j-1,:) / A
+            tmp = A.transpose().colPivHouseholderQr().solve(Cbar.row(j-1).transpose()).transpose();
             Cbar.row(j) = tmp;
             Dbar(j,1) = tmp * B;
 
