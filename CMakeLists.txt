@@ -57,7 +57,7 @@ if (pybind11_FOUND)
 endif ()
 
 # Unit tests
-if (Boost_FOUND AND yaml-cpp_FOUND)
+if (Boost_UNIT_TEST_FRAMEWORK_FOUND AND yaml-cpp_FOUND)
     ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
     add_executable(test-library "test/test_LinearSystem.cpp")
     target_include_directories(test-library PRIVATE ${Boost_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
@@ -66,7 +66,11 @@ if (Boost_FOUND AND yaml-cpp_FOUND)
 endif ()
 
 # Install cpp library
-set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "include/LinearSystem.hpp;include/HelperFunctions.hpp")
+set(LIBRARY_HEADERS
+    include/LinearSystem.hpp
+    include/HelperFunctions.hpp
+)
+set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "${LIBRARY_HEADERS}")
 install(
     TARGETS ${LIBNAME}
     EXPORT "${LIBNAME}-export"
