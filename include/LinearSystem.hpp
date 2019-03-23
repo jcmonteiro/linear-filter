@@ -15,6 +15,7 @@ enum IntegrationMethod
 };
 
 typedef int64_t Time;
+typedef Eigen::VectorXd Poly;
 
 /*!
  * \brief The LinearSystem class implements multiple identical N-th order linear filters at once
@@ -38,10 +39,10 @@ private:
     Eigen::MatrixXd state; //States of the state-space in matrix form (numInputs,stateSize)
 
     /*! @brief Filter numerator tfNum[0] s^N + tfNum[1] s^(N-1) + ... + tfNum[N] */
-    Eigen::VectorXd tf_num;
+    Poly tf_num;
 
     /*! @brief Filter denominator tfDen[0] s^N + tfDen[1] s^(N-1) + ... + tfDen[N] */
-    Eigen::VectorXd tf_den;
+    Poly tf_den;
 
     /*! @brief Sampling period (in seconds) */
     double Ts;
@@ -80,9 +81,9 @@ private:
      */
     double prewarp_frequency;
 
-    void convertFwdEuler(Eigen::VectorXd & poly) const;
-    void convertBwdEuler(Eigen::VectorXd & poly) const;
-    void convertTustin(Eigen::VectorXd & poly) const;
+    void convertFwdEuler(Poly & poly) const;
+    void convertBwdEuler(Poly & poly) const;
+    void convertTustin(Poly & poly) const;
 
     /*!
      * \brief update Updates all filters (one sample period) based on the given inputs
@@ -96,8 +97,8 @@ private:
     void tf2ss();
 
 public:
-    LinearSystem(Eigen::VectorXd _tfNum = Eigen::VectorXd::Zero(1), Eigen::VectorXd _tfDen = Eigen::VectorXd::Constant(1,1),
-                     double _Ts = 0.001, IntegrationMethod _integrationMethod = TUSTIN, double _prewarpFrequency = 0);
+    LinearSystem(Poly _tfNum = Poly::Zero(1), Poly _tfDen = Poly::Constant(1,1),
+        double _Ts = 0.001, IntegrationMethod _integrationMethod = TUSTIN, double _prewarpFrequency = 0);
 
     /*!
      * \brief setIntegrationMethod Configures the integration method
@@ -159,7 +160,7 @@ public:
      * \param coef_num Numerator coefficients coef_num[0] s^N + coef_num[1] s^(N-1) + ... + coef_num[N]
      * \param coef_den Denominator coefficients coef_den[0] s^N + coef_den[1] s^(N-1) + ... + coef_den[N]
      */
-    void setFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den);
+    void setFilter(const Poly &coef_num, const Poly &coef_den);
 
     /*!
      * \brief setSampling Sets the sampling period (in seconds)
