@@ -376,7 +376,7 @@ void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & _initialO
         last_output = initial_output_derivatives.col(0);
 }
 
-LinearSystem::Time LinearSystem::getTimeFromSeconds(double time)
+Time LinearSystem::getTimeFromSeconds(double time)
 {
     return 1000000L * time;
 }

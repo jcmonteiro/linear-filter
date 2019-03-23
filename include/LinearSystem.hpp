@@ -14,6 +14,7 @@ enum IntegrationMethod
     TUSTIN
 };
 
+typedef int64_t Time;
 
 /*!
  * \brief The LinearSystem class implements multiple identical N-th order linear filters at once
@@ -21,8 +22,6 @@ enum IntegrationMethod
 class LinearSystem
 {
 public:
-    typedef int64_t Time;
-
     /*! @brief Default maximum time (in seconds) that is allowed to pass between calls to Update */
     const static double DEFAULT_MAX_TIME_BETWEEN_UPDATES;
 

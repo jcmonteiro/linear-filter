@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         // update filters
         for (int k = 0; k < n; ++k)
         {
-            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
+            Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
             u_i(0) = u(k);
 
             BOOST_TEST_PASSPOINT();
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         // update filters
         for (int i = 0; i < n; i++)
         {
-            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
+            Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();
