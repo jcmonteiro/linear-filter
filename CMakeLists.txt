@@ -33,6 +33,7 @@ include_directories("include" ${EIGEN3_INCLUDE_DIRS})
 set(LIBRARY_SOURCES
     src/HelperFunctions.cpp
     src/LinearSystem.cpp
+    src/Builder.cpp
 )
 add_library(${LIBNAME} SHARED "${LIBRARY_SOURCES}")
 
@@ -69,6 +70,7 @@ endif ()
 set(LIBRARY_HEADERS
     include/LinearSystem.hpp
     include/HelperFunctions.hpp
+    include/Builder.hpp
 )
 set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "${LIBRARY_HEADERS}")
 install(
