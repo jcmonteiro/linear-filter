@@ -46,8 +46,8 @@ void GetYmlData(const YAML::Node & node, int & n, int & order, LinearSystem & ls
     node["y_fwd"] >> y_fwd;
     node["y_bwd"] >> y_bwd;
 
-    Eigen::VectorXd num(order+1);
-    Eigen::VectorXd den(order+1);
+    Poly num(order+1);
+    Poly den(order+1);
     Eigen::MatrixXd ydy0(1,order);
     node["num"] >> num;
     node["den"] >> den;
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
     sys.setMaximumTimeBetweenUpdates(1);
     sys.setIntegrationMethod(IntegrationMethod::BACKWARD_EULER);
 
-    Eigen::VectorXd num(3), den(3);
+    Poly num(3), den(3);
     num << 0, 0, 1;
     den << 1, 2, 1;
     sys.setFilter(num, den);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters_simple)
     std::cout << "[TEST] number of filters (simple test)" << std::endl;
     LinearSystem sys;
     sys.useNFilters(3);
-    Eigen::VectorXd num(2), den(2);
+    Poly num(2), den(2);
     num << 0, 1;
     den << 1, 1;
     BOOST_TEST_PASSPOINT();
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         // update filters
         for (int k = 0; k < n; ++k)
         {
-            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
+            Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
             u_i(0) = u(k);
 
             BOOST_TEST_PASSPOINT();
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         Eigen::VectorXd y_fwd(n);
         Eigen::VectorXd y_bwd(n);
         //
-        Eigen::VectorXd num, den;
+        Poly num, den;
 
         // Tustin
         BOOST_TEST_PASSPOINT();
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         // update filters
         for (int i = 0; i < n; i++)
         {
-            LinearSystem::Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
+            Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();

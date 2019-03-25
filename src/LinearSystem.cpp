@@ -7,7 +7,7 @@ using namespace linear_system;
 
 const double LinearSystem::DEFAULT_MAX_TIME_BETWEEN_UPDATES = 1;
 
-LinearSystem::LinearSystem(Eigen::VectorXd _tfNum, Eigen::VectorXd _tfDen, double _Ts, IntegrationMethod _integrationMethod, double _prewarpFrequency) :
+LinearSystem::LinearSystem(Poly _tfNum, Poly _tfDen, double _Ts, IntegrationMethod _integrationMethod, double _prewarpFrequency) :
     n_filters(1), time_current(0), time_init_set(false)
 {
     this->setFilter(_tfNum, _tfDen);
@@ -30,7 +30,7 @@ void LinearSystem::useNFilters(unsigned int n_filters)
     last_output.setZero(n_filters);
 }
 
-void LinearSystem::setFilter(const Eigen::VectorXd & coef_num, const Eigen::VectorXd & coef_den)
+void LinearSystem::setFilter(const Poly &coef_num, const Poly &coef_den)
 {
     if (coef_den.size() == 0)
         throw std::logic_error("invalid system order, since there are no denominator coefficients to set");
@@ -47,8 +47,8 @@ void LinearSystem::setFilter(const Eigen::VectorXd & coef_num, const Eigen::Vect
     // if some of the higher terms are zero
     if (coef_den.size() > coef_num.size())
     {
-        Eigen::VectorXd tmp_num(tf_den.size());
-        tmp_num << Eigen::VectorXd::Zero(coef_den.size() - coef_num.size(), 1), coef_num;
+        Poly tmp_num(tf_den.size());
+        tmp_num << Poly::Zero(coef_den.size() - coef_num.size(), 1), coef_num;
         tf_num = tmp_num;
     }
     else
@@ -95,9 +95,9 @@ void LinearSystem::setMaximumTimeBetweenUpdates(double delta_time)
     max_delta = 1000000L * delta_time;
 }
 
-void LinearSystem::convertFwdEuler(Eigen::VectorXd & poly) const
+void LinearSystem::convertFwdEuler(Poly &poly) const
 {
-    Eigen::VectorXd poly_old = poly;
+    Poly poly_old = poly;
     poly.setZero();
     //
     for (unsigned int k = 0; k <= order; ++k)
@@ -107,9 +107,9 @@ void LinearSystem::convertFwdEuler(Eigen::VectorXd & poly) const
     }
 }
 
-void LinearSystem::convertBwdEuler(Eigen::VectorXd & poly) const
+void LinearSystem::convertBwdEuler(Poly &poly) const
 {
-    Eigen::VectorXd poly_old = poly;
+    Poly poly_old = poly;
     poly.setZero();
     //
     for (unsigned int k = 0; k <= order; k++)
@@ -119,13 +119,13 @@ void LinearSystem::convertBwdEuler(Eigen::VectorXd & poly) const
     }
 }
 
-void LinearSystem::convertTustin(Eigen::VectorXd & poly) const
+void LinearSystem::convertTustin(Poly &poly) const
 {
-    Eigen::VectorXd poly_old = poly;
+    Poly poly_old = poly;
     poly.setZero();
     //
-    Eigen::VectorXd tustin_sum(order + 1);
-    Eigen::VectorXd tustin_coefs(order + 1);
+    Poly tustin_sum(order + 1);
+    Poly tustin_coefs(order + 1);
     double tustin_a = (prewarp_frequency != 0) ? prewarp_frequency / tan(prewarp_frequency * Ts / 2) : 2 / Ts;
     //
     for (unsigned int k = 0; k <= order; k++)
@@ -177,11 +177,11 @@ void LinearSystem::tf2ss()
         return;
     }
 
-    Eigen::VectorXd num(order + 1);
+    Poly num(order + 1);
 
     if (PolynomialDegree(tf_num) == PolynomialDegree(tf_den))
     {
-        Eigen::VectorXd quotient(order + 1);
+        Poly quotient(order + 1);
         PolynomialDivision(tf_num, tf_den, quotient, num);
         D = quotient(order);
     }
@@ -377,7 +377,7 @@ void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & _initialO
         last_output = initial_output_derivatives.col(0);
 }
 
-LinearSystem::Time LinearSystem::getTimeFromSeconds(double time)
+Time LinearSystem::getTimeFromSeconds(double time)
 {
     return 1000000L * time;
 }

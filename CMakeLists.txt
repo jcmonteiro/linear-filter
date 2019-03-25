@@ -28,11 +28,13 @@ find_package(Boost QUIET COMPONENTS unit_test_framework)
 find_package(yaml-cpp QUIET)
 find_package(Eigen3 REQUIRED)
 find_package(pybind11 QUIET)
+find_package(PkgConfig QUIET)
 
 include_directories("include" ${EIGEN3_INCLUDE_DIRS})
 set(LIBRARY_SOURCES
     src/HelperFunctions.cpp
     src/LinearSystem.cpp
+    src/Builder.cpp
 )
 add_library(${LIBNAME} SHARED "${LIBRARY_SOURCES}")
 
@@ -57,7 +59,7 @@ if (pybind11_FOUND)
 endif ()
 
 # Unit tests
-if (Boost_FOUND AND yaml-cpp_FOUND)
+if (Boost_UNIT_TEST_FRAMEWORK_FOUND AND yaml-cpp_FOUND)
     ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
     add_executable(test-library "test/test_LinearSystem.cpp")
     target_include_directories(test-library PRIVATE ${Boost_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
@@ -65,8 +67,19 @@ if (Boost_FOUND AND yaml-cpp_FOUND)
     add_test(NAME test-1 COMMAND test-library)
 endif ()
 
-# Install cpp library
-set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "include/LinearSystem.hpp;include/HelperFunctions.hpp")
+# Install c++ library
+if (PkgConfig_FOUND)
+    set(PKGCONFIG_REQUIRES "eigen3")
+    set(PKGCONFIG_CFLAGS "-std=c++11")
+    CONFIGURE_FILE("${CMAKE_CURRENT_LIST_DIR}/cmake/linear-system.pc.in" "linear-system.pc" @ONLY)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/linear-system.pc" DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig/)
+endif ()
+set(LIBRARY_HEADERS
+    include/LinearSystem.hpp
+    include/HelperFunctions.hpp
+    include/Builder.hpp
+)
+set_target_properties(${LIBNAME} PROPERTIES PUBLIC_HEADER "${LIBRARY_HEADERS}")
 install(
     TARGETS ${LIBNAME}
     EXPORT "${LIBNAME}-export"

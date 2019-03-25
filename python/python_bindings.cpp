@@ -9,7 +9,7 @@ using namespace linear_system;
 
 // define some helper functions here to resolve which functions to call when there are multiple signatures
 
-Eigen::VectorXd update(LinearSystem &sys, const Eigen::RowVectorXd &input, LinearSystem::Time time)
+Eigen::VectorXd update(LinearSystem &sys, const Eigen::RowVectorXd &input, Time time)
 {
     return sys.update(input, time);
 }
