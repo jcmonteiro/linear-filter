@@ -208,13 +208,15 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         tustin_ls.setInitialState(u0);
 
         // update filters
+        Time step = LinearSystem::getTimeFromSeconds(Ts);
+        Time time = step;
         for (int k = 0; k < n; ++k)
         {
-            Time time = LinearSystem::getTimeFromSeconds( (k+1) * Ts );
             u_i(0) = u(k);
 
             BOOST_TEST_PASSPOINT();
             y_tustin(k) = tustin_ls.update(u_i, time)(0);
+            time += step;
         }
 
         double delta = 1e-5;
@@ -293,9 +295,10 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         bwd_ls.setInitialState(u0);
 
         // update filters
+        Time step = LinearSystem::getTimeFromSeconds(Ts);
+        Time time = step;
         for (int i = 0; i < n; i++)
         {
-            Time time = LinearSystem::getTimeFromSeconds( (i+1) * Ts );
             u_i(0) = u(i);
 
             BOOST_TEST_PASSPOINT();
@@ -306,6 +309,8 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
 
             BOOST_TEST_PASSPOINT();
             y_bwd(i) = bwd_ls.update(u_i, time)(0);
+
+            time += step;
         }
 
         double delta = 1e-5;
@@ -332,4 +337,76 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
     }
     printProgress(progress_width, 1.0);
     std::cout << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(test_sampling_time)
+{
+    std::cout << "[TEST] response of a nominal second-order using two different sampling periods" << std::endl;
+    double damp = 0.7;
+    double wc = 2 * M_PI;
+    double wn = wc / std::sqrt(1 - damp*damp);
+
+    Eigen::VectorXd num(1), den(3);
+    num << wn*wn;
+    den << 1, 2*wn*damp, wn*wn;
+
+    LinearSystem model_ts_a(num, den, 0.003);
+    LinearSystem model_ts_b(num, den, 0.005);
+    LinearSystem model_ts_c(num, den, 0.011);
+
+    Eigen::MatrixXd init_out(1, 2), init_in(1, 2);
+    init_out << 0, 0;
+    init_in  << 1, 1;
+    //
+    model_ts_a.setInitialOutputDerivatives(init_out);
+    model_ts_a.discretizeSystem();
+    model_ts_a.setInitialTime(0);
+    model_ts_a.setInitialState(init_in);
+    //
+    model_ts_b.setInitialOutputDerivatives(init_out);
+    model_ts_b.discretizeSystem();
+    model_ts_b.setInitialTime(0);
+    model_ts_b.setInitialState(init_in);
+    //
+    model_ts_c.setInitialOutputDerivatives(init_out);
+    model_ts_c.discretizeSystem();
+    model_ts_c.setInitialTime(0);
+    model_ts_c.setInitialState(init_in);
+
+    Time step = 5000L;
+    Time time = 0L;
+    double time_settling = wn / 4;
+    Time timeout = 1000000L * (2 * time_settling);
+    Eigen::VectorXd ref(1);
+    ref << 1;
+    unsigned int samples = timeout / step + 1, k = 0;
+    Eigen::MatrixXd data(samples, 4);
+    while (time < timeout)
+    {
+        model_ts_a.update(ref, time);
+        model_ts_b.update(ref, time);
+        model_ts_c.update(ref, time);
+
+        data(k, 0) = ((double) time) / 1000000L;
+        data(k, 1) = model_ts_a.getOutput()[0];
+        data(k, 2) = model_ts_b.getOutput()[0];
+        data(k, 3) = model_ts_c.getOutput()[0];
+
+        time += step;
+        ++k;
+    }
+    data.conservativeResize(k, Eigen::NoChange);
+    const Eigen::ArrayXd &time_vec = data.col(0);
+    Eigen::ArrayXd nominal = 1 - Eigen::exp(-damp*wn*time_vec) * Eigen::sin(wc * time_vec + std::acos(damp)) / std::sqrt(1-damp*damp);
+
+    double delta = 1e-1;
+    for (unsigned int k = 1; k < 4; ++k)
+    {
+        double max_error = (data.col(k).array() - nominal).abs().maxCoeff();
+        if (max_error > delta)
+        {
+                BOOST_ERROR("y_bwd error");
+                std::cout << "max error = " << max_error << std::endl;
+        }
+    }
 }

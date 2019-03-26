@@ -240,12 +240,12 @@ Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time ti
     }
 
 
-    Time iterations = std::roundl( (delta / getSampling()) / 1000000L );
+    Time iterations = delta / getSamplingMicro();
 
     if (iterations == 0)
         return last_output;
 
-    time_current = time;
+    time_current += getSamplingMicro() * iterations;
 
     for (unsigned int k = 1; k < iterations; ++k)
     {

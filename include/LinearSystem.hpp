@@ -174,10 +174,16 @@ public:
     void setSampling(double sampling_period);
 
     /**
-     * @brief getSampling Returns the sampling period.
+     * @brief Returns the sampling period in seconds.
      * @return The sampling period.
      */
     inline double getSampling() const {return Ts;}
+
+    /**
+     * @brief Returns the sampling period in microseconds.
+     * @return The sampling period.
+     */
+    inline Time getSamplingMicro() const {return Ts * 1000000L;}
 
     /*!
      * \brief getMaximumTimeBetweenUpdates Returns the maximum time (in seconds) between calls to Update
