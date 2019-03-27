@@ -399,14 +399,22 @@ BOOST_AUTO_TEST_CASE(test_sampling_time)
     const Eigen::ArrayXd &time_vec = data.col(0);
     Eigen::ArrayXd nominal = 1 - Eigen::exp(-damp*wn*time_vec) * Eigen::sin(wc * time_vec + std::acos(damp)) / std::sqrt(1-damp*damp);
 
-    double delta = 1e-1;
-    for (unsigned int k = 1; k < 4; ++k)
+    LinearSystem *sys[] = {&model_ts_a, &model_ts_b, &model_ts_c};
+    for (unsigned int k = 0; k < 3; ++k)
     {
-        double max_error = (data.col(k).array() - nominal).abs().maxCoeff();
-        if (max_error > delta)
+        double ts = sys[k]->getSampling();
+        // approximate max velocity of the model during one sample time
+        // this is only "almost" valid if the sampling time is small
+        double max_vel = wn / std::sqrt(1-damp*damp) * std::exp(-damp * wn * M_PI / 2 / wc);
+        // delay is half a sample, so multiply by 1.5
+        // also multiply by 2 because it takes approximately two updates for the discrete system
+        // respond to a rapid change
+        double tol = 2 * 1.5 * max_vel * ts;
+        double max_error = (data.col(k+1).array() - nominal).abs().maxCoeff();
+        if (max_error > tol)
         {
                 BOOST_ERROR("y_bwd error");
-                std::cout << "max error = " << max_error << std::endl;
+                std::cout << "max error = " << max_error << " , tol = " << tol << std::endl;
         }
     }
 }
