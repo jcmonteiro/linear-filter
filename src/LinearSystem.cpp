@@ -207,7 +207,7 @@ void LinearSystem::tf2ss()
         C(i) = num(order-i);
 }
 
-Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time time)
+Output LinearSystem::update(const Input &signalIn, Time time)
 {
     Time delta = time - time_current;
     if (!time_init_set)
@@ -261,7 +261,7 @@ Eigen::VectorXd LinearSystem::update(const Eigen::RowVectorXd &signalIn, Time ti
     return last_output;
 }
 
-void LinearSystem::update(const Eigen::RowVectorXd &signalIn)
+void LinearSystem::update(const Input &signalIn)
 {
     if (signalIn.size() != n_filters)
     {

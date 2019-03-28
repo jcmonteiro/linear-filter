@@ -16,6 +16,8 @@ enum IntegrationMethod
 
 typedef int64_t Time;
 typedef Eigen::VectorXd Poly;
+typedef Eigen::RowVectorXd Input;
+typedef Eigen::VectorXd Output;
 
 /*!
  * \brief The LinearSystem class implements multiple identical N-th order linear filters at once
@@ -54,7 +56,7 @@ private:
     bool time_init_set;
 
     /*! @brief Last output value */
-    Eigen::VectorXd last_output;
+    Output last_output;
 
     /*!
      * \brief Initial output and its N-1 derivatives for each filter
@@ -105,7 +107,7 @@ private:
      * \brief update Updates all filters (one sample period) based on the given inputs
      * \param signalIn input signals
      */
-    void update(const Eigen::RowVectorXd &signalIn);
+    void update(const Input &signalIn);
 
     /*!
      * \brief Computes the state-space realization (A,B,C,D)
@@ -277,7 +279,7 @@ public:
     /**
      * @brief Returns the last output returned by this filter.
      */
-    inline const Eigen::VectorXd & getOutput() const {return last_output;}
+    inline const Output & getOutput() const {return last_output;}
 
     /*!
      * \brief Sets the maximum time (in seconds) between calls to #update
@@ -291,7 +293,7 @@ public:
      * \param time current time (in microseconds).
      * \return The output of every filter.
      */
-    Eigen::VectorXd update(const Eigen::RowVectorXd &signalIn, Time time);
+    Output update(const Input &signalIn, Time time);
 
     /**
      * @brief Forces a state for each filter.
