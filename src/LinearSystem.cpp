@@ -5,18 +5,15 @@
 
 using namespace linear_system;
 
-const double LinearSystem::DEFAULT_MAX_TIME_BETWEEN_UPDATES = 1;
-
-LinearSystem::LinearSystem(Poly _tfNum, Poly _tfDen, double _Ts, IntegrationMethod _integrationMethod, double _prewarpFrequency) :
-    n_filters(1), time_current(0), time_init_set(false)
+LinearSystem::LinearSystem(Poly num, Poly den, double ts, IntegrationMethod method, double prewarp) :
+    n_filters(1), time_current(0), time_init_set(false), max_delta(0),
+    integration_method(method)
 {
-    this->setFilter(_tfNum, _tfDen);
-    this->useNFilters(1);
-    this->setSampling(_Ts);
-    this->setMaximumTimeBetweenUpdates(DEFAULT_MAX_TIME_BETWEEN_UPDATES);
-
-    integration_method = _integrationMethod;
-    prewarp_frequency = _prewarpFrequency;
+    setPrewarpFrequency(prewarp);
+    setSampling(ts);
+    setFilter(num, den);
+    useNFilters(1);
+    setMaximumTimeBetweenUpdates(10 * ts);
 }
 
 void LinearSystem::useNFilters(unsigned int n_filters)
@@ -74,6 +71,15 @@ void LinearSystem::setFilter(const Poly &coef_num, const Poly &coef_den)
 
     // Reset last output
     last_output.setZero(n_filters);
+
+    // Discretize system
+    discretize();
+}
+
+void LinearSystem::setInitialConditions(const Eigen::MatrixXd &init_in, const Eigen::MatrixXd &init_out_dout)
+{
+    setInitialOutputDerivatives(init_out_dout);
+    setInitialState(init_in);
 }
 
 void LinearSystem::setSampling(double sampling_period)
@@ -143,7 +149,7 @@ void LinearSystem::convertTustin(Poly &poly) const
     }
 }
 
-void LinearSystem::discretizeSystem()
+void LinearSystem::discretize()
 {
     switch(integration_method)
     {
@@ -332,47 +338,29 @@ void LinearSystem::setInitialState(const Eigen::MatrixXd & u_history)
     last_output = initial_output_derivatives.col(0);
 }
 
-void LinearSystem::setInitialState(const Eigen::VectorXd & u_channels)
+void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & initial_output_derivatives)
 {
-    if (order > 1)
-        throw std::logic_error("SetInitialState cannot be called with a vector as input if the filter order is greater than 1");
-    if (n_filters != u_channels.size())
-    {
-        char buffer[100];
-        std::sprintf(buffer, "expected %d input %s, one for each filter, but received %d",
-                     n_filters,
-                     (n_filters == 1) ? "entry" : "entries",
-                     (int) u_channels.size());
-        throw std::logic_error(buffer);
-    }
-    Eigen::MatrixXd u_history(n_filters, 1);
-    u_history.col(0) = u_channels;
-    this->setInitialState(u_history);
-}
-
-void LinearSystem::setInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives)
-{
-    if (_initialOutputDerivatives.cols() != order)
+    if (initial_output_derivatives.cols() != order)
     {
         char buffer[70];
         std::sprintf(buffer, "expected %d %s per row, but received %d",
                      order,
                      (order == 1) ? "element" : "elements",
-                     (int) _initialOutputDerivatives.cols());
+                     (int) initial_output_derivatives.cols());
         throw std::logic_error(buffer);
     }
 
-    if (_initialOutputDerivatives.rows() != n_filters)
+    if (initial_output_derivatives.rows() != n_filters)
     {
         char buffer[70];
         std::sprintf(buffer, "expected %d %s per column, but received %d",
                      n_filters,
                      (n_filters == 1) ? "element" : "elements",
-                     (int) _initialOutputDerivatives.rows());
+                     (int) initial_output_derivatives.rows());
         throw std::logic_error(buffer);
     }
 
-    initial_output_derivatives = _initialOutputDerivatives;
+    this->initial_output_derivatives = initial_output_derivatives;
     if (order > 0)
         last_output = initial_output_derivatives.col(0);
 }

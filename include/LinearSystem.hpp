@@ -23,9 +23,6 @@ typedef Eigen::VectorXd Poly;
 class LinearSystem
 {
 public:
-    /*! @brief Default maximum time (in seconds) that is allowed to pass between calls to Update */
-    const static double DEFAULT_MAX_TIME_BETWEEN_UPDATES;
-
     static Time getTimeFromSeconds(double time);
 
 private:
@@ -81,8 +78,27 @@ private:
      */
     double prewarp_frequency;
 
+    /*!
+     * \brief Transforms the filter to discrete time.
+     */
+    void discretize();
+
+    /**
+     * @brief Converts the polynomial \p poly from continuous-time do discrete-time using
+     * the forward Euler approximation
+     */
     void convertFwdEuler(Poly & poly) const;
+
+    /**
+     * @brief Converts the polynomial \p poly from continuous-time do discrete-time using
+     * the backward Euler approximation
+     */
     void convertBwdEuler(Poly & poly) const;
+
+    /**
+     * @brief Converts the polynomial \p poly from continuous-time do discrete-time using
+     * the Tustin approximation
+     */
     void convertTustin(Poly & poly) const;
 
     /*!
@@ -92,32 +108,56 @@ private:
     void update(const Eigen::RowVectorXd &signalIn);
 
     /*!
-     * \brief tf2ss Computes the state-space realization (A,B,C,D)
+     * \brief Computes the state-space realization (A,B,C,D)
      */
     void tf2ss();
 
-public:
-    LinearSystem(Poly _tfNum = Poly::Zero(1), Poly _tfDen = Poly::Constant(1,1),
-        double _Ts = 0.001, IntegrationMethod _integrationMethod = TUSTIN, double _prewarpFrequency = 0);
-
     /*!
-     * \brief setIntegrationMethod Configures the integration method
-     * \param method The integration method
+     * \brief setFilter Configures the numerator and denominator used by the filters
+     * \param coef_num Numerator coefficients coef_num[0] s^N + coef_num[1] s^(N-1) + ... + coef_num[N]
+     * \param coef_den Denominator coefficients coef_den[0] s^N + coef_den[1] s^(N-1) + ... + coef_den[N]
+     * \param
      */
-    inline void setIntegrationMethod(IntegrationMethod method) {integration_method = method;}
+    void setFilter(const Poly &coef_num, const Poly &coef_den);
 
     /*!
-     * \brief getIntegrationMethod Returns the integration method
-     * \return The integration method
+     * \brief setInitialState Sets the initial state x[0] of the N-th order filter
+     *
+     * The initial state is computed from:
+     *     u[0], ..., u[-(N-1)], the current and N-1 past input samples
+     *     y[0], dy/dt[0], ..., d^(N-1)y/dt^(N-1)[0], the current output and its N-1 derivatives
+     *
+     * The output and its derivatives must be set via #setInitialOutputDerivatives
+     *
+     * \param u_history each i-th row holds u_i[0], ..., u_i[-(N-1)], in this order; that is, the
+     * current input and last N-1 inputs of the i-th input channel
+     * \see #setInitialOutputDerivatives
      */
-    inline IntegrationMethod getIntegrationMethod() const {return integration_method;}
+    void setInitialState(const Eigen::MatrixXd & u_history);
 
     /*!
-     * \brief setPrewarpFrequency Configures the prewarp frequency used with Tustin's integration method
+     * \brief setInitialOutputDerivatives Sets the initial output and its N-1 derivatives,
+     * where N is the filter order, for each channel
+     *
+     * \param initial_output_derivatives Every row contains y[0], dy/dt[0], ...,
+     * d^(N-1)y/dt^(N-1)[0], in this order and each row corresponds to one independent
+     * instance of the filter defined by this class
+     *
+     * \see #setInitialState
+     */
+    void setInitialOutputDerivatives(const Eigen::MatrixXd & initial_output_derivatives);
+
+    /*!
+     * \brief Configures the prewarp frequency used with Tustin's integration method.
+     *
+     * This method must be called before setFilter.
+     *
      * \param frequency The prewarp frequency
      */
     inline void setPrewarpFrequency(double frequency)
     {
+        if (integration_method != TUSTIN)
+            frequency = 0;
         if (frequency >= 0)
             prewarp_frequency = frequency;
         else
@@ -125,8 +165,39 @@ public:
     }
 
     /*!
-     * \brief getPrewarpFrequency Returns the prewarp frequency used with Tustin's integration method
-     * \return The prewarp frequency
+     * \brief Sets the sampling period (in seconds).
+     *
+     * A call to this method silently changes the maximum allowed time between updates
+     * if the new sampling period >= #getMaximumTimeBetweenUpdates. When this happens,
+     * this methods makes a call to #setMaximumTimeBetweenUpdates(10 * sampling_period).
+     *
+     * \param sampling_period positive sampling period.
+     */
+    void setSampling(double sampling_period);
+
+public:
+    /**
+     * @brief Constructor.
+     * @param num Filter numerator.
+     * @param den Filter denominator.
+     * @param ts Filter sampling time.
+     * @param method Integration method.
+     * @param prewarp Prewarp frequency to use with Tustin's integration method. Use 0 to
+     * disable it. Defaults to 0.
+     */
+    LinearSystem(Poly num = Poly::Zero(1), Poly den = Poly::Constant(1,1), double ts = 0.001,
+        IntegrationMethod method = TUSTIN, double prewarp = 0);
+
+    /*!
+     * \brief Returns the integration method chosen when calling setFilter;
+     * defaults to #IntegrationMethod::Tustin
+     * \return The integration method
+     */
+    inline IntegrationMethod getIntegrationMethod() const {return integration_method;}
+
+    /*!
+     * \brief Returns the prewarp frequency used with Tustin's integration method.
+     * \return The prewarp frequency.
      */
     inline double getPrewarpFrequency() const {return prewarp_frequency;}
 
@@ -151,27 +222,33 @@ public:
     }
 
     /*!
-     * \brief UseNFilters Chooses how many filters should run in parallel
+     * \brief Chooses how many filters should run in parallel.
+     *
+     * This method must be called before #setInitialConditions
      */
     void useNFilters(unsigned int n_filters);
 
-    /*!
-     * \brief setFilter Configures the numerator and denominator used by the filters
-     * \param coef_num Numerator coefficients coef_num[0] s^N + coef_num[1] s^(N-1) + ... + coef_num[N]
-     * \param coef_den Denominator coefficients coef_den[0] s^N + coef_den[1] s^(N-1) + ... + coef_den[N]
+    /**
+     * @brief Configures the filter initial state given the current input and its N-1 previous
+     * values and the desired initial output and its N-1 derivatives.
+     *
+     * One must still call #setInitialTime after (or before) calling this method.
+     *
+     * @param init_in A (#getNFilters by #getOrder) matrix where each row contains u_i[0], ..., u_i[-(N-1)],
+     * the current and N-1 past input samples of the i-th input channel.
+     * @param init_out_dout A (#getNFilters by #getOrder) matrix where each row contains y_i[0], dy_i/dt[0],
+     * ..., d^(N-1)y_i/dt^(N-1)[0], the i-th output and its N-1 derivatives.
+     *
+     * \see setInitialTime
      */
-    void setFilter(const Poly &coef_num, const Poly &coef_den);
+    void setInitialConditions(const Eigen::MatrixXd &init_in, const Eigen::MatrixXd &init_out_dout);
 
     /*!
-     * \brief setSampling Sets the sampling period (in seconds)
-     *
-     * A call to this method silently changes the maximum allowed time between updates
-     * if the new sampling period >= GetMaximumTimeBetweenUpdates(). When this happens,
-     * this methods makes a call to SetMaximumTimeBetweenUpdates(10 * sampling_period).
-     *
-     * \param sampling_period positive sampling period
+     * \brief setInitialTime Sets the filter initial time.
+     * \param time The initial time.
+     * \see setInitialConditions
      */
-    void setSampling(double sampling_period);
+    inline void setInitialTime(Time time) {time_current = time; time_init_set = true;}
 
     /**
      * @brief Returns the sampling period in seconds.
@@ -186,81 +263,49 @@ public:
     inline Time getSamplingMicro() const {return Ts * 1000000L;}
 
     /*!
-     * \brief getMaximumTimeBetweenUpdates Returns the maximum time (in seconds) between calls to Update
-     * \return The maximum time between updates
+     * \brief Returns the maximum time (in seconds) between calls to #update.
+     * \return The maximum time between updates.
      */
     inline double getMaximumTimeBetweenUpdates() const {return ((double) max_delta) / 1000000;}
 
     /*!
-     * \brief getNFilters Returns the number of filters
-     * \return The number of filters
+     * \brief Returns the number of filters.
+     * \return The number of filters.
      */
     inline unsigned int getNFilters() const {return n_filters;}
 
+    /**
+     * @brief Returns the last output returned by this filter.
+     */
     inline const Eigen::VectorXd & getOutput() const {return last_output;}
 
     /*!
-     * \brief setMaximumTimeBetweenUpdates Sets the maximum time (in seconds) between calls to Update
-     * \param delta_time The maximum time between updates
+     * \brief Sets the maximum time (in seconds) between calls to #update
+     * \param delta_time The maximum time between updates.
      */
     void setMaximumTimeBetweenUpdates(double delta_time);
 
     /*!
-     * \brief discretizeSystem Transforms the filter to discrete time
-     */
-    void discretizeSystem();
-
-    /*!
-     * \brief setInitialTime Sets the filter initial time
-     * \param time The initial time
-     */
-    inline void setInitialTime(Time time) {time_current = time; time_init_set = true;}
-
-    /*!
-     * \brief update Updates all filters based on the given inputs until they reach the current time
-     * \param signalIn input signals
-     * \param time current time (in microseconds)
-     * \return The output of every filter
+     * \brief Updates all filters based on the given inputs until they reach the current time.
+     * \param signalIn input signals.
+     * \param time current time (in microseconds).
+     * \return The output of every filter.
      */
     Eigen::VectorXd update(const Eigen::RowVectorXd &signalIn, Time time);
 
-    void setState(const Eigen::MatrixXd &_state){state = _state;}
+    /**
+     * @brief Forces a state for each filter.
+     * @param state A (#getNFilters by #getOrder) matrix where each row holds
+     * the state of the i-th filter.
+     */
+    void setState(const Eigen::MatrixXd &state){this->state = state;}
+
+    /**
+     * @brief Returns the states of each one of the #getNFilters filters
+     * @return A (#getNFilters by #getOrder) matrix where each row holds
+     * the state of the i-th filter.
+     */
     inline Eigen::MatrixXd getState() const {return state;}
-
-    /*!
-     * \brief setInitialState Sets the initial state x[0] of the N-th order filter
-     *
-     * The initial state is computed from:
-     *     u[0], ..., u[-(N-1)], the current and N-1 past input samples
-     *     y[0], dy/dt[0], ..., d^(N-1)y/dt^(N-1)[0], the current output and its N-1 derivatives
-     *
-     * The output and its derivatives must be set via SetInitialOutputDerivatives
-     *
-     * \param u_history each i-th row holds u_i[0], ..., u_i[-(N-1)], in this order
-     * \see SetInitialOutputDerivatives
-     */
-    void setInitialState(const Eigen::MatrixXd & u_history);
-
-    /*!
-     * \brief setInitialState Sets the initial state x[0] of the 1-st order filter
-     *
-     * This method should only be called when the filter is of 1-st order
-     *
-     * \param u_channels holds u_1[0], u_2[0], ..., u_M[0], where M is the number of filters
-     * \see UseNFilters
-     */
-    void setInitialState(const Eigen::VectorXd & u_channels);
-
-    /*!
-     * \brief setInitialOutputDerivatives Sets the initial output and its N-1 derivatives,
-     * where N is the filter order, for each channel
-     *
-     * Every row contains y[0], dy/dt[0], ..., d^(N-1)y/dt^(N-1)[0], in this order and each row
-     * corresponds to one independent instance of the filter defined by this class
-     *
-     * \param _initialOutputDerivatives
-     */
-    void setInitialOutputDerivatives(const Eigen::MatrixXd & _initialOutputDerivatives);
 };
 
 }
