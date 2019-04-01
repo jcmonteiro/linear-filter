@@ -7,6 +7,7 @@
 #include <HelperFunctions.hpp>
 #include <LinearSystem.hpp>
 #include <limits>
+#include <fstream>
 
 using namespace linear_system;
 
@@ -305,7 +306,7 @@ BOOST_AUTO_TEST_CASE(test_sampling_time)
     std::cout << "[TEST] response of a nominal second-order using two different sampling periods" << std::endl;
     double damp = 0.7;
     double wc = 2 * M_PI;
-    double wn = wc / std::sqrt(1 - damp*damp);
+    double wn = cutoff2resonant(wc, damp);
 
     Eigen::VectorXd num(1), den(3);
     num << wn*wn;
@@ -335,40 +336,39 @@ BOOST_AUTO_TEST_CASE(test_sampling_time)
     Eigen::VectorXd ref(1);
     ref << 1;
     unsigned int samples = timeout / step + 1, k = 0;
-    Eigen::MatrixXd data(samples, 4);
+    Eigen::MatrixXd data(samples, 3);
     while (time < timeout)
     {
         model_ts_a.update(ref, time);
         model_ts_b.update(ref, time);
         model_ts_c.update(ref, time);
 
-        data(k, 0) = ((double) time) / 1000000L;
-        data(k, 1) = model_ts_a.getOutput()[0];
-        data(k, 2) = model_ts_b.getOutput()[0];
-        data(k, 3) = model_ts_c.getOutput()[0];
+        data(k, 0) = model_ts_a.getOutput()[0];
+        data(k, 1) = model_ts_b.getOutput()[0];
+        data(k, 2) = model_ts_c.getOutput()[0];
 
         time += step;
         ++k;
     }
     data.conservativeResize(k, Eigen::NoChange);
-    const Eigen::ArrayXd &time_vec = data.col(0);
-    Eigen::ArrayXd nominal = 1 - Eigen::exp(-damp*wn*time_vec) * Eigen::sin(wc * time_vec + std::acos(damp)) / std::sqrt(1-damp*damp);
 
-    LinearSystem *sys[] = {&model_ts_a, &model_ts_b, &model_ts_c};
+    double overshoot = 1 + std::exp(-M_PI * damp/std::sqrt(1-damp*damp));
     for (unsigned int k = 0; k < 3; ++k)
     {
-        double ts = sys[k]->getSampling();
-        // approximate max velocity of the model during one sample time
-        // this is only "almost" valid if the sampling time is small
-        double max_vel = wn / std::sqrt(1-damp*damp) * std::exp(-damp * wn * M_PI / 2 / wc);
-        // this is a sort of magic number taken from observations
-        // I made it as tight a tolerance as I could (with two decimal places)
-        double tol = 2.16 * max_vel * ts;
-        double max_error = (data.col(k+1).array() - nominal).abs().maxCoeff();
-        if (max_error > tol)
+        double max = data.col(k).array().abs().maxCoeff();
+        double error_over = std::abs(max - overshoot);
+        double max_diff = (data.colwise() - data.col(k)).array().abs().maxCoeff();
+        double tol_over = 0.0015; // 0.15%
+        double tol_diff = 0.04;
+        if ( error_over > tol_over )
         {
-                BOOST_ERROR("y_bwd error");
-                std::cout << "max error = " << max_error << " , tol = " << tol << std::endl;
+                BOOST_ERROR("measured step-response does not match the nominal one");
+                std::cout << "overshoot error = " << error_over << " , tol = " << tol_over << std::endl;
+        }
+        if ( max_diff > tol_diff )
+        {
+                BOOST_ERROR("step-responses differ from each other");
+                std::cout << "max diff = " << max_diff << " , tol = " << tol_diff << std::endl;
         }
     }
 }
