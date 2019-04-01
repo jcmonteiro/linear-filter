@@ -1,4 +1,5 @@
 #include "Builder.hpp"
+#include "HelperFunctions.hpp"
 
 
 using namespace linear_system;
@@ -7,7 +8,7 @@ using namespace linear_system;
 LinearSystem Builder::createSecondOrder(double damp, double cutoff)
 {
     Poly num(3), den(3);
-    double wn = cutoff / damp;
+    double wn = cutoff2resonant(cutoff, damp);
     num << 0, wn*wn, 0;
     den << 1, 2*damp*wn, wn*wn;
     return LinearSystem(num, den);

@@ -96,4 +96,22 @@ void PolynomialDivision(const Eigen::MatrixBase<Derived> & N, const Eigen::Matri
 void wrap2pi(double &ang);
 void wrap2pi(Eigen::VectorXd &ang);
 
+/**
+ * @brief Computes the cutoff frequency of a nominal second-order system
+ * given the resonant frequency \p w and damping coefficient \p damp.
+ * @param w Resonant frequency.
+ * @param damp Damping coefficient.
+ * @return Cutoff frequency.
+ */
+double resonant2cutoff(double w, double damp);
+
+/**
+ * @brief Computes the resonant frequency of a nominal second-order system
+ * given the cutoff frequency \p w and damping coefficient \p damp.
+ * @param w Cutoff frequency.
+ * @param damp Damping coefficient.
+ * @return Resonant frequency.
+ */
+double cutoff2resonant(double w, double damp);
+
 }
