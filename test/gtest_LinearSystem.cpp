@@ -87,14 +87,15 @@ void printProgress(int width, float progress)
         std::cout << std::endl;
 }
 
-TEST(LinearSystemTest, test_updates_takes_too_long)
+TEST(LinearSystemTest, testUpdatesTakeTooLong)
 {
+    std::cout << "[TEST] update timeout" << std::endl;
+
     Poly num(3), den(3);
     num << 0, 0, 1;
     den << 1, 2, 1;
 
     LinearSystem sys(num, den, 0.1, BACKWARD_EULER);
-
     sys.useNFilters(2);
     sys.setMaximumTimeBetweenUpdates(1);
 
@@ -110,41 +111,15 @@ TEST(LinearSystemTest, test_updates_takes_too_long)
     Eigen::VectorXd u(2);
     u << 1, 1.5;
     sys.update(u, LinearSystem::getTimeFromSeconds(0.5));
+    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(1));
     y2 = sys.update(u, LinearSystem::getTimeFromSeconds(2.1));
 
     EXPECT_FALSE( (y1 - y2).cwiseAbs().maxCoeff() > std::numeric_limits<double>::min() ) << "outputs should be the same if the update took too long to be processed" << std::endl;
-    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(3));
-    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(1));
 
-        // THESE LIMITS HAVE BEEN HARD CODED!
+    y1 = sys.update(u, LinearSystem::getTimeFromSeconds(3));
+    // THESE LIMITS HAVE BEEN HARD CODED!
     EXPECT_FALSE( (y1 - y2).cwiseAbs().minCoeff() < 0.139545 && (y1 - y2).cwiseAbs().maxCoeff() > 0.142949 ) << "the filter values do not look right after calling update" << std::endl;
 }
-
-/* Not working for now
-TEST(LinearSystemTest, test_number_of_filters_simple)
-{
-    Poly num(2), den(2);
-    num << 0, 1;
-    den << 1, 1;
-    LinearSystem sys(num, den);
-    sys.useNFilters(3);
-
-    Eigen::MatrixXd ydy0(3,1);
-    ydy0 << 1,
-            1,
-            1;
-    Eigen::VectorXd u0 = Eigen::VectorXd::Zero(3,1);
-    sys.setInitialConditions(u0, ydy0);
-    sys.setInitialTime(0);
-
-    Eigen::VectorXd input(3);
-    input << 2,2,2;
-    Eigen::VectorXd out = sys.update(input, LinearSystem::getTimeFromSeconds(sys.getSampling()));
-    double delta = 1e-15;
-    EXPECT_FALSE( std::abs(out(0) - out(1)) > delta || std::abs(out(1) != out(2)) > delta ) << "filters output differ" << std::endl;
-}
-*/
-
 int main(int argc, char **argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
