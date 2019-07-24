@@ -1,6 +1,4 @@
-#define BOOST_TEST_MODULE LinearSystem test
-
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 #include <iostream>
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -70,29 +68,8 @@ void GetYmlData(const YAML::Node &node, int& n, int &order, LinearSystem &ls_tus
     ls_bwd.setInitialTime(0);
 }
 
-void printProgress(int width, float progress)
+TEST(LinearSystemTest, testUpdatesTakeTooLong)
 {
-    std::cout << "[";
-    int pos = width * progress;
-    for (int i = 0; i < width; ++i)
-    {
-        if (i < pos)
-            std::cout << "=";
-        else if (i == pos)
-            std::cout << ">";
-        else
-            std::cout << " ";
-    }
-    std::cout << "] " << int(progress * 100.0) << " %\r";
-    std::cout.flush();
-    if (progress == 1.0)
-        std::cout << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
-{
-    std::cout << "[TEST] update timeout" << std::endl;
-
     Poly num(3), den(3);
     num << 0, 0, 1;
     den << 1, 2, 1;
@@ -116,23 +93,15 @@ BOOST_AUTO_TEST_CASE(test_updates_takes_too_long)
     y1 = sys.update(u, LinearSystem::getTimeFromSeconds(1));
     y2 = sys.update(u, LinearSystem::getTimeFromSeconds(2.1));
 
-    if ( (y1 - y2).cwiseAbs().maxCoeff() > std::numeric_limits<double>::min() )
-    {
-        BOOST_ERROR("outputs should be the same if the update took too long to be processed");
-    }
+    EXPECT_FALSE( (y1 - y2).cwiseAbs().maxCoeff() > std::numeric_limits<double>::min() ) << "outputs should be the same if the update took too long to be processed" << std::endl;
 
     y1 = sys.update(u, LinearSystem::getTimeFromSeconds(3));
     // THESE LIMITS HAVE BEEN HARD CODED!
-    if ( (y1 - y2).cwiseAbs().minCoeff() < 0.139545 && (y1 - y2).cwiseAbs().maxCoeff() > 0.142949 )
-    {
-        BOOST_ERROR("the filter values do not look right after calling update");
-    }
-    std::cout << std::endl;
+    EXPECT_FALSE( (y1 - y2).cwiseAbs().minCoeff() < 0.139545 && (y1 - y2).cwiseAbs().maxCoeff() > 0.142949 ) << "the filter values do not look right after calling update" << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(test_number_of_filters_simple)
+TEST(LinearSystemTest, testNumberOfFiltersSimple)
 {
-    std::cout << "[TEST] number of filters (simple test)" << std::endl;
     Poly num(2), den(2);
     num << 0, 1;
     den << 1, 1;
@@ -144,47 +113,32 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters_simple)
             1,
             1;
     Eigen::VectorXd u0 = Eigen::VectorXd::Zero(3,1);
-    BOOST_TEST_PASSPOINT();
     sys.setInitialConditions(u0, ydy0);
     sys.setInitialTime(0);
 
-    BOOST_TEST_PASSPOINT();
     Eigen::VectorXd input(3);
     input << 2,2,2;
     Eigen::VectorXd out = sys.update(input, LinearSystem::getTimeFromSeconds(sys.getSampling()));
     double delta = 1e-15;
-    if (std::abs(out(0) - out(1)) > delta || std::abs(out(1) != out(2)) > delta)
-    {
-        BOOST_ERROR("filters output differ");
-    }
-    std::cout << std::endl;
+    EXPECT_FALSE( std::abs(out(0) - out(1)) > delta || std::abs(out(1) != out(2)) > delta ) << "filters output differ" << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(test_number_of_filters)
+TEST(LinearSystemTest, testNumberOfFilters)
 {
-    std::cout << "[TEST] number of filters" << std::endl;
-    BOOST_TEST_PASSPOINT();
     YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
-    int progress_width = 50;
-    float progress_max = doc.size();
     double Ts;
     for (unsigned i = 0; i < doc.size(); i++)
     {
-        printProgress(progress_width, i / progress_max);
-
         int n, order;
-        BOOST_TEST_PASSPOINT();
         LinearSystem tustin_ls;
         LinearSystem _a;
         LinearSystem _b;
-        BOOST_TEST_PASSPOINT();
         Eigen::VectorXd u;
         Eigen::VectorXd y_tustin_data;
         Eigen::VectorXd y_fwd_data;
         Eigen::VectorXd y_bwd_data;
 
-        BOOST_TEST_PASSPOINT();
         GetYmlData(doc[i],n,order,tustin_ls,_a,_b,u,y_tustin_data,y_fwd_data,y_bwd_data,Ts);
 
         Eigen::VectorXd u_i(1);
@@ -199,7 +153,6 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         {
             u_i(0) = u(k);
 
-            BOOST_TEST_PASSPOINT();
             y_tustin(k) = tustin_ls.update(u_i, time)(0);
             time += step;
         }
@@ -208,43 +161,28 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
         double maxError;
 
         maxError = (y_tustin_data - y_tustin).cwiseAbs().maxCoeff();
-        if (maxError > delta)
-        {
-                BOOST_ERROR("y_tustin error");
-                std::cout << "max error = " << maxError << std::endl;
-        }
+        EXPECT_FALSE(maxError > delta) << "y_tustin error. Max error = " << maxError<< std::endl;
     }
-    printProgress(progress_width, 1.0);
-    std::cout << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(test_LinearSystem)
+TEST(LinearSystemTest, testLinearSystem)
 {
-    std::cout << "[TEST] Tustin, Forward Euler and Backward Euler" << std::endl;
-    BOOST_TEST_PASSPOINT();
     YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
-    int progress_width = 50;
-    float progress_max = doc.size();
     double Ts;
     for (unsigned i = 0; i < doc.size(); i++)
     {
-        printProgress(progress_width, i / progress_max);
-
         int n, order;
-        BOOST_TEST_PASSPOINT();
         LinearSystem tustin_ls;
-        BOOST_TEST_PASSPOINT();
         LinearSystem fwd_ls;
-        BOOST_TEST_PASSPOINT();
         LinearSystem bwd_ls;
-        BOOST_TEST_PASSPOINT();
+        
         Eigen::VectorXd u;
         Eigen::VectorXd y_tustin_data;
         Eigen::VectorXd y_fwd_data;
         Eigen::VectorXd y_bwd_data;
 
-        BOOST_TEST_PASSPOINT();
+        
         GetYmlData(doc[i],n,order,tustin_ls,fwd_ls,bwd_ls,u,y_tustin_data,y_fwd_data,y_bwd_data,Ts);
 
         // Should change this to consider the exact same initial conditions as the
@@ -262,14 +200,8 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         for (int i = 0; i < n; i++)
         {
             u_i(0) = u(i);
-
-            BOOST_TEST_PASSPOINT();
-            y_tustin(i) = tustin_ls.update(u_i, time)(0);
-
-            BOOST_TEST_PASSPOINT();
+            y_tustin(i) = tustin_ls.update(u_i, time)(0);            
             y_fwd(i) = fwd_ls.update(u_i, time)(0);
-
-            BOOST_TEST_PASSPOINT();
             y_bwd(i) = bwd_ls.update(u_i, time)(0);
 
             time += step;
@@ -279,31 +211,18 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
         double maxError;
 
         maxError = (y_tustin_data - y_tustin).cwiseAbs().maxCoeff();
-        if (maxError > delta)
-        {
-                BOOST_ERROR("y_tustin error");
-                std::cout << "max error = " << maxError << std::endl;
-        }
+        EXPECT_FALSE(maxError > delta) << "y_tustin error. Max error = " << maxError << std::endl;
+
         maxError = (y_fwd_data - y_fwd).cwiseAbs().maxCoeff();
-        if (maxError > delta)
-        {
-                BOOST_ERROR("y_fwd error");
-                std::cout << "max error = " << maxError << std::endl;
-        }
+        EXPECT_FALSE(maxError > delta) << "y_fwd error. Max error = " << maxError << std::endl;
+        
         maxError = (y_bwd_data - y_bwd).cwiseAbs().maxCoeff();
-        if (maxError > delta)
-        {
-                BOOST_ERROR("y_bwd error");
-                std::cout << "max error = " << maxError << std::endl;
-        }
+        EXPECT_FALSE(maxError > delta) << "y_bwd error. Max error = " << maxError << std::endl;
     }
-    printProgress(progress_width, 1.0);
-    std::cout << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(test_sampling_time)
+TEST(LinearSystemTest, testSamplingTime)
 {
-    std::cout << "[TEST] response of a nominal second-order using two different sampling periods" << std::endl;
     double damp = 0.7;
     double wc = 2 * M_PI;
     double wn = cutoff2resonant(wc, damp);
@@ -360,15 +279,13 @@ BOOST_AUTO_TEST_CASE(test_sampling_time)
         double max_diff = (data.colwise() - data.col(k)).array().abs().maxCoeff();
         double tol_over = 0.0015; // 0.15%
         double tol_diff = 0.04;
-        if ( error_over > tol_over )
-        {
-                BOOST_ERROR("measured step-response does not match the nominal one");
-                std::cout << "overshoot error = " << error_over << " , tol = " << tol_over << std::endl;
-        }
-        if ( max_diff > tol_diff )
-        {
-                BOOST_ERROR("step-responses differ from each other");
-                std::cout << "max diff = " << max_diff << " , tol = " << tol_diff << std::endl;
-        }
+        EXPECT_FALSE( error_over > tol_over ) << "Measured step-response does not match the nominal one. Overshoot error = " << error_over << " , tol = " << tol_over << std::endl;
+        EXPECT_FALSE( max_diff > tol_diff ) << "Step-responses differ from each other. Max diff = " << max_diff << " , tol = " << tol_diff << std::endl;
     }
+}
+
+int main(int argc, char **argv)
+{
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
