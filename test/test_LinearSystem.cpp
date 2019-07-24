@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(test_number_of_filters)
 {
     std::cout << "[TEST] number of filters" << std::endl;
     BOOST_TEST_PASSPOINT();
-    YAML::Node doc = YAML::LoadFile("test_LinearSystem.yml");
+    YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
     int progress_width = 50;
     float progress_max = doc.size();
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(test_LinearSystem)
 {
     std::cout << "[TEST] Tustin, Forward Euler and Backward Euler" << std::endl;
     BOOST_TEST_PASSPOINT();
-    YAML::Node doc = YAML::LoadFile("test_LinearSystem.yml");
+    YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
     int progress_width = 50;
     float progress_max = doc.size();

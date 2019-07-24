@@ -125,7 +125,7 @@ TEST(LinearSystemTest, testNumberOfFiltersSimple)
 
 TEST(LinearSystemTest, testNumberOfFilters)
 {
-    YAML::Node doc = YAML::LoadFile("test/test_LinearSystem.yml");
+    YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
     double Ts;
     for (unsigned i = 0; i < doc.size(); i++)
@@ -167,7 +167,7 @@ TEST(LinearSystemTest, testNumberOfFilters)
 
 TEST(LinearSystemTest, testLinearSystem)
 {
-    YAML::Node doc = YAML::LoadFile("test/test_LinearSystem.yml");
+    YAML::Node doc = YAML::LoadFile("../test/test_LinearSystem.yml");
 
     double Ts;
     for (unsigned i = 0; i < doc.size(); i++)

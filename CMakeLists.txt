@@ -60,22 +60,26 @@ if (pybind11_FOUND)
 endif ()
 
 # Unit tests
-# 1. Boost
 OPTION(BOOST_UTF "Create test using Boost Unit Test Framework" OFF) # Disabled by default
+OPTION(GTEST_UTF "Create test using Google test Unit Test Framework" OFF) # Disabled by default
+if (BOOST_UTF OR GTEST_UTF)
+    enable_testing()
+endif ()
+
+# 1. Boost
 if (Boost_UNIT_TEST_FRAMEWORK_FOUND AND yaml-cpp_FOUND AND BOOST_UTF)
     ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
     add_executable(test-library "test/test_LinearSystem.cpp")
     target_include_directories(test-library PRIVATE ${Boost_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
     target_link_libraries(test-library ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} ${LIBNAME})
-    add_test(NAME test-1 COMMAND test-library)
+    add_test(NAME boost-test COMMAND test-library)
 endif ()
 # 2. Google Test
-OPTION(GTEST_UTF "Create test using Google test Unit Test Framework" OFF) # Disabled by default
 if (GTEST_FOUND AND yaml-cpp_FOUND AND GTEST_UTF)
     add_executable(gtest-library "test/gtest_LinearSystem.cpp")
     target_include_directories(gtest-library PRIVATE ${GTEST_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
     target_link_libraries(gtest-library ${GTEST_LIBRARIES} ${YAML_CPP_LIBRARIES} pthread ${LIBNAME})
-    #add_test(NAME gtest-1 COMMAND gtest-library)
+    add_test(NAME gtest-test COMMAND gtest-library)
 endif ()
 
 # Install c++ library
